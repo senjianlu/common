@@ -1,0 +1,38 @@
+[log]
+level = "INFO"
+dir_path = "logs/"
+
+[chrome]
+# 快照存储路径
+snapshot_path = "../snapshots/"
+
+[redis]
+host = "127.0.0.1"
+port = 6379
+password = "my_redis_password"
+db = 0
+
+[rabbitmq]
+host = "127.0.0.1"
+port = 5672
+username = "my_rabbitmq_user"
+password = "my_rabbitmq_password"
+
+[postgresql]
+host = "127.0.0.1"
+port = 5432
+username = "my_postgresql_user"
+password = "my_postgresql_password"
+database = "my_postgresql_db"
+
+[user]
+# ID
+id = "common_user_id"
+# 用户名
+name = "Common User Name"
+
+[proxy]
+# 混淆密钥
+obfs_key = "my_obfs_key"
+# 转发 host
+forwarder_host = "127.0.0.1"
