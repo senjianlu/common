@@ -59,6 +59,37 @@ def _generate_proxy_username_and_password_by_port(port: int):
     # 9. 返回结果
     return encrypted_string[:10], encrypted_string[10:]
 
+def parse_proxy_str(proxy_str: str):
+    """
+    @description: 解析代理字符串
+    """
+    host = None
+    port = None
+    protocol = None
+    username = None
+    password = None
+    # 1. 参数判断
+    if not proxy_str:
+        LOGGER.error("共通 Proxy -> 代理字符串为空，无法解析")
+        return host, port, protocol, username, password
+    # 2. 解析代理字符串
+    try:
+        # 2.1 解析协议
+        protocol = proxy_str.split("://", 1)[0]
+        # 2.2 解析主机和端口
+        host_port = proxy_str.split("://", 1)[1]
+        host = host_port.split(":", 1)[0]
+        port = int(host_port.split(":", 1)[1].split("@", 1)[0])
+        # 2.3 解析用户名和密码
+        if "@" in host_port:
+            username_password = host_port.split("@", 1)[0].split(":", 1)
+            username = username_password[0]
+            password = username_password[1]
+    except Exception as e:
+        LOGGER.error("共通 Proxy -> 解析代理字符串失败，错误信息：%s" % str(e))
+    # 3. 返回结果
+    return host, port, protocol, username, password
+
 def init_proxy_pool(is_exit_ip_remove_duplicate = True):
     """
     @description: 初始化代理池

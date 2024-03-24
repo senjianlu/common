@@ -37,7 +37,7 @@ password = "$my_rabbitmq_password"
 
 [proxy]
 # 混淆密钥
-obfs_key = "my_obfs_key"
+obfs_key = "$my_obfs_key"
 # 转发 host
 forwarder_host = "127.0.0.1"
 

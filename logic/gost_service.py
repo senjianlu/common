@@ -34,6 +34,50 @@ def is_exist(name: str) -> bool:
             return True
     return False
 
+def get_by_name_like(name_like: str):
+    """
+    @description: 获取服务
+    """
+    # 1. 检查参数
+    if not name_like:
+        LOGGER.error("GOST Service 获取 -> 服务名称不能为空")
+        return None
+    # 2. 获取全部配置
+    config = gost_config.get_config()
+    if not config:
+        LOGGER.error("GOST Service 获取 -> 获取配置失败")
+        return None
+    # 3. 获取服务列表
+    services = config.get("services", []) or []
+    # 4. 获取服务
+    name_like_services = []
+    for service in services:
+        if name_like in service.get("name"):
+            name_like_services.append(service)
+    # 5. 返回结果
+    return name_like_services
+
+def get(name: str):
+    """
+    @description: 获取服务
+    """
+    # 1. 检查参数
+    if not name:
+        LOGGER.error("GOST Service 获取 -> 服务名称不能为空")
+        return None
+    # 2. 获取全部配置
+    config = gost_config.get_config()
+    if not config:
+        LOGGER.error("GOST Service 获取 -> 获取配置失败")
+        return None
+    # 3. 获取服务列表
+    services = config.get("services", []) or []
+    # 4. 获取服务
+    for service in services:
+        if service.get("name") == name:
+            return service
+    return None
+
 def add(name: str,
         addr: str,
         handler: dict,
@@ -124,30 +168,5 @@ def delete(name: str):
     if not response_json:
         LOGGER.error("GOST Service 删除 -> 删除服务失败")
         return False
-    # 5. 返回结果
-    return True
-
-def delete_by_name_like(name_like: str):
-    """
-    @description: 删除服务
-    """
-    # 1. 检查参数
-    if not name_like:
-        LOGGER.error("GOST Service 删除 -> 服务名称不能为空")
-        return False
-    # 2. 获取全部配置
-    config = gost_config.get_config()
-    if not config:
-        LOGGER.error("GOST Service 删除 -> 获取配置失败")
-        return False
-    # 3. 获取服务列表
-    services = config.get("services", []) or []
-    # 4. 删除服务
-    for service in services:
-        if name_like in service.get("name"):
-            response_json = gost_requests.delete("api/config/services/{}".format(service.get("name")))
-            if not response_json:
-                LOGGER.error("GOST Service 删除 -> 删除服务失败")
-                return False
     # 5. 返回结果
     return True
