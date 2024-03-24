@@ -19,8 +19,8 @@ try:
     CONFIG = toml.load("../config.toml")
     CONFIG_FILE_PATH = "../config.toml"
 except Exception as e:
-    CONFIG = toml.load("config.toml")
-    CONFIG_FILE_PATH = "config.toml"
+    CONFIG = toml.load("config.template.toml")
+    CONFIG_FILE_PATH = "config.template.toml"
 
 
 def reload():
@@ -32,5 +32,5 @@ def reload():
         CONFIG = toml.load("../config.toml")
         CONFIG_FILE_PATH = "../config.toml"
     except Exception:
-        CONFIG = toml.load("config.toml")
-        CONFIG_FILE_PATH = "config.toml"
+        CONFIG = toml.load("config.template.toml")
+        CONFIG_FILE_PATH = "config.template.toml"

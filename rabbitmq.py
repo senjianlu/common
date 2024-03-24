@@ -10,6 +10,7 @@
 
 
 import pika
+import requests
 
 from common.config import CONFIG
 from common.logger import LOGGER
@@ -44,3 +45,34 @@ def init_connection(host: str = CONFIG["rabbitmq"]["host"],
         LOGGER.error(msg="连接 RabbitMQ 失败！错误信息：{}".format(e))
         return None
     return connection
+
+def get_queue_list(api_host: str = CONFIG["rabbitmq"]["api"]["host"],
+                   api_username: str = CONFIG["rabbitmq"]["api"]["username"],
+                   api_password: str = CONFIG["rabbitmq"]["api"]["password"]):
+    """
+    @description: 获取队列列表
+    @param {type}
+    @return:
+    """
+    # 1. 发送请求
+    url = "{}/api/queues".format(api_host.strip("/"))
+    headers = {
+        "Content-Type": "application/json"
+    }
+    try:
+        response = requests.get(
+            url,
+            auth=(api_username, api_password),
+            headers=headers,
+            timeout=30
+        )
+        response_json = response.json()
+    except Exception as e:
+        LOGGER.error("RabbitMQ -> 获取队列列表失败，错误信息：{}".format(e))
+        return []
+    # 2. 判断响应是否成功
+    if not response_json:
+        LOGGER.error("RabbitMQ -> 获取队列列表失败，响应为空")
+        return []
+    # 3. 返回结果
+    return response_json

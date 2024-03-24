@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from common.config import CONFIG
 from common.logger import LOGGER
-from models.Base import init_db
+from common.Base import init_db
 
 
 # 全局变量

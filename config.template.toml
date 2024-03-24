@@ -1,0 +1,56 @@
+[log]
+level = "INFO"
+dir_path = "logs/"
+
+[redis]
+host = "127.0.0.1"
+port = 6379
+password = "$my_redis_password"
+db = 0
+
+[postgresql]
+host = "127.0.0.1"
+port = 5432
+username = "$my_postgresql_username"
+password = "$my_postgresql_password"
+database = "$my_postgresql_db"
+
+[user]
+# ID
+id = "common_user_id"
+# 用户名
+name = "Common User Name"
+
+[chrome]
+# 快照存储路径
+snapshot_path = "../snapshots/"
+
+[rabbitmq]
+host = "127.0.0.1"
+port = 5672
+username = "$my_rabbitmq_username"
+password = "$my_rabbitmq_password"
+  [rabbitmq.api]
+  host = "https://rq.example.com"
+  username = "$my_rabbitmq_username"
+  password = "$my_rabbitmq_password"
+
+[proxy]
+# 混淆密钥
+obfs_key = "my_obfs_key"
+# 转发 host
+forwarder_host = "127.0.0.1"
+
+[currency]
+# 本位币
+base_currency_code = "CNY"
+
+[adspower]
+host = "127.0.0.1"
+url = "http://127.0.0.1:50325"
+
+[gost]
+host = "127.0.0.1"
+url = "http://127.0.0.1:50326"
+auth_username = "$my_gost_username"
+auth_password = "$my_gost_password"
