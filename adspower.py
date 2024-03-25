@@ -51,7 +51,7 @@ def start_browser(user_id: str = None,
                   serial_number: str = None,
                   is_open_tabs: bool = False,
                   is_open_ip_tab: bool = False,
-                  is_open_new_first_tab: bool = False,
+                  is_new_first_tab: bool = False,
                   launch_args: list = [],
                   is_headless: bool = False,
                   is_disable_password_filling: bool = True,
@@ -69,9 +69,9 @@ def start_browser(user_id: str = None,
     params = {
         "user_id": user_id if user_id else "",
         "serial_number": serial_number if serial_number else "",
-        "open_tabs": 1 if is_open_tabs else 0,
+        "open_tabs": 0 if is_open_tabs else 1,
         "ip_tab": 1 if is_open_ip_tab else 0,
-        "new_first_tab": 1 if is_open_new_first_tab else 0,
+        "new_first_tab": 1 if is_new_first_tab else 0,
         "launch_args": launch_args,
         "headless": 1 if is_headless else 0,
         "disable_password_filling": 1 if is_disable_password_filling else 0,
@@ -164,3 +164,14 @@ def get_browser_status(user_id: str = None,
     # 3. 返回结果
     LOGGER.info("AdsPower 指纹浏览器 -> 获取浏览器状态成功：{}".format(response_json["data"]))
     return response_json["data"]
+
+def is_browser_active():
+    """
+    判断浏览器是否处于激活状态
+    """
+    # 1. 获取浏览器状态
+    browser_status = get_browser_status()
+    # 2. 判断状态
+    if not browser_status or "status" not in browser_status or browser_status["status"] != "Active":
+        return False
+    return True
