@@ -165,12 +165,13 @@ def get_browser_status(user_id: str = None,
     LOGGER.info("AdsPower 指纹浏览器 -> 获取浏览器状态成功：{}".format(response_json["data"]))
     return response_json["data"]
 
-def is_browser_active():
+def is_browser_active(user_id: str = None,
+                      serial_number: str = None):
     """
     判断浏览器是否处于激活状态
     """
     # 1. 获取浏览器状态
-    browser_status = get_browser_status()
+    browser_status = get_browser_status(user_id=user_id, serial_number=serial_number)
     # 2. 判断状态
     if not browser_status or "status" not in browser_status or browser_status["status"] != "Active":
         return False
