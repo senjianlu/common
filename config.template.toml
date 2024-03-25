@@ -54,3 +54,9 @@ host = "127.0.0.1"
 url = "http://127.0.0.1:50326"
 auth_username = "$my_gost_username"
 auth_password = "$my_gost_password"
+
+[bark]
+# 服务地址
+url = "http://127.0.0.1:8080"
+# 推送密钥
+key = "$my_bark_key"

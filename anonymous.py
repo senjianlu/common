@@ -11,6 +11,13 @@
 
 from common.logic import anonymous_user_agent
 
+
+def init_anonymous():
+    """
+    @description: 初始化匿名函数
+    """
+    anonymous_user_agent.init_user_agents()
+
 def get_random_user_agent():
     """
     @description: 获取随机的 User-Agent

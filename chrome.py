@@ -17,6 +17,8 @@ from selenium.webdriver.chrome.service import Service
 from common.logger import CONFIG
 from common.logger import LOGGER
 from common import adspower
+from common import gost
+from common import proxy
 
 
 class ChromeNetworkError(Exception):
@@ -35,11 +37,27 @@ class ChromeNginxError(Exception):
         self.nginx_error_message = nginx_error_message
         super().__init__(nginx_error_message)
 
+
+def import_jquery(driver):
+    """
+    @description: 导入 jQuery
+    """
+    with open("common/resources/js/jquery.min.js", "r") as f:
+        jquery_js = f.read()
+    try:
+        driver.execute_script(jquery_js)
+    except Exception as e:
+        LOGGER.error("共通 Chrome -> 导入 jQuery 失败！")
+        LOGGER.error(e)
+        return False
+    LOGGER.info("共通 Chrome -> 导入 jQuery 成功。")
+    return True
+
 # def _get_stealth_js_content():
 #     """
 #     @description: 获取 Stealth.js 内容
 #     """
-#     with open("../resources/js/stealth.min.js", "r") as f:
+#     with open("common/resources/js/stealth.min.js", "r") as f:
 #         return f.read()
 
 def connect_remote_chrome(selenium_remote_url: str, proxy_str: str = None):
@@ -104,9 +122,9 @@ def connect_debug_chrome(debug_host: str = "localhost", debug_port: int = 9222, 
     chrome_service = None
     LOGGER.info("共通 Chrome -> 操作系统：{}".format(platform.system()))
     if platform.system() == "Linux":
-        chrome_service = Service("../resources/chromedriver/{}/linux".format(chrome_version))
+        chrome_service = Service("common/resources/chromedriver/{}/linux".format(chrome_version))
     elif platform.system() == "Darwin":
-        chrome_service = Service("../resources/chromedriver/{}/macos".format(chrome_version))
+        chrome_service = Service("common/resources/chromedriver/{}/macos".format(chrome_version))
     else:
         LOGGER.error("共通 Chrome -> 不支持的操作系统：{}".format(platform.system()))
         return None
@@ -149,10 +167,46 @@ def start_adspower_browser(user_id: str = None,
     @return:
     """
     # 1. 设置变量
+    adspower_host = adspower.ADSPOWER_HOST
+    adspower_browser_debug_host = "127.0.0.1"
     adspower_browser_debug_port = None
+    adspower_browser_debug_protocol = "tcp"
+    adspower_browser_forwarded_debug_host = "0.0.0.0"
     adspower_browser_forwarded_debug_port = 14080 + int(serial_number)
-    adspower_browser_proxy_port = 15080 + int(serial_number)
-    # 2. 启动浏览器
+    adspower_browser_forwarded_debug_protocol = "tcp"
+    adspower_browser_proxy_host = "127.0.0.1"
+    adspower_browser_proxy_port = 13080 + int(serial_number)
+    adspower_browser_proxy_protocol = "socks5"
+    # 2. 检测浏览器状态
+    browser_status = adspower.get_browser_status(user_id=user_id, serial_number=serial_number)
+    if not browser_status:
+        LOGGER.error("共通 Chrome -> 获取 Ads Power 浏览器状态失败")
+        return None
+    if "status" in browser_status and browser_status["status"] == "Active":
+        LOGGER.info("共通 Chrome -> Ads Power 浏览器已经启动，如有需要请关闭后再启动")
+        return None
+    # 3. 设置代理转发
+    # 3.1 删除之前的代理转发
+    proxy_port_forward_service_list = gost.get_port_forward_service_list(
+        from_host=adspower_browser_proxy_host, from_port=adspower_browser_proxy_port)
+    for proxy_port_forward_service in proxy_port_forward_service_list:
+        gost.delete_port_forward_service_with_chain(proxy_port_forward_service["name"])
+    # 3.2 添加新的代理转发
+    proxy_host, proxy_port, proxy_protocol, proxy_username, proxy_password = proxy.parse_proxy_str(proxy_str)
+    is_proxy_service_added = gost.add_port_forward_service_with_chain(
+        from_host=adspower_browser_proxy_host,
+        from_port=adspower_browser_proxy_port,
+        from_protocol=adspower_browser_proxy_protocol,
+        to_host=proxy_host,
+        to_port=proxy_port,
+        to_protocol=proxy_protocol,
+        to_auth_username=proxy_username,
+        to_auth_password=proxy_password
+    )
+    if not is_proxy_service_added:
+        LOGGER.error("共通 Chrome -> 添加代理转发失败")
+        return None
+    # 4. 启动浏览器
     is_browser_started = adspower.start_browser(
         user_id=user_id,
         serial_number=serial_number,
@@ -168,7 +222,7 @@ def start_adspower_browser(user_id: str = None,
     if not is_browser_started:
         LOGGER.error("共通 Chrome -> 启动 Ads Power 浏览器失败")
         return None
-    # 3. 获取浏览器状态
+    # 5. 获取启动后的浏览器状态
     browser_status = adspower.get_browser_status(user_id=user_id, serial_number=serial_number)
     if not browser_status:
         LOGGER.error("共通 Chrome -> 获取 Ads Power 浏览器状态失败")
@@ -177,12 +231,27 @@ def start_adspower_browser(user_id: str = None,
         LOGGER.error("共通 Chrome -> Ads Power 浏览器状态中 debug_port 不存在")
         return None
     adspower_browser_debug_port = browser_status["debug_port"]
-    # 4. 添加端口转发
+    # 4. 添加对于 debug 端口的转发
     # 4.1 删除之前对于浏览器 debug 端口的转发
+    debug_port_forward_service_list = gost.get_port_forward_service_list(
+        from_host=adspower_browser_forwarded_debug_host,
+        from_port=adspower_browser_forwarded_debug_port)
+    for debug_port_forward_service in debug_port_forward_service_list:
+        gost.delete_port_forward_service_without_chain(debug_port_forward_service["name"])
     # 4.2 添加新的浏览器 debug 端口转发
-    # 4.3 删除之前对于 GOST 代理的转发
-    # 4.4 添加新的 GOST 代理转发
-    # 5. 返回结果
+    is_debug_port_forward_service_added = gost.add_port_forward_service_without_chain(
+        from_host=adspower_browser_forwarded_debug_host,
+        from_port=adspower_browser_forwarded_debug_port,
+        from_protocol=adspower_browser_forwarded_debug_protocol,
+        to_host=adspower_browser_debug_host,
+        to_port=adspower_browser_debug_port,
+        to_protocol=adspower_browser_debug_protocol
+    )
+    if not is_debug_port_forward_service_added:
+        LOGGER.error("共通 Chrome -> 添加浏览器 debug 端口转发失败")
+        return None
+    # 6. 返回结果
+    return adspower_host, adspower_browser_forwarded_debug_port
 
 def check_is_network_error(driver):
     """

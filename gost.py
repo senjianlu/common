@@ -207,7 +207,7 @@ def add_port_forward_service_with_chain(from_host: str,
         LOGGER.error("GOST 转发控制 -> 参数缺失，无法添加转发规则")
         return False
     # 3. 修改参数
-    base_name = "port-forward-{}-{}-{}-to-{}-{}-{}-service".format(from_protocol, from_host, from_port, to_protocol, to_host, to_port) if not base_name else base_name
+    base_name = "port-forward-{}-{}-{}-to-{}-{}-{}".format(from_protocol, from_host, from_port, to_protocol, to_host, to_port) if not base_name else base_name
     service_name = base_name + "-service"
     chain_name = base_name + "-chain"
     hop_name = base_name + "-hop"

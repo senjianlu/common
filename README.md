@@ -20,24 +20,25 @@ selenium==4.17.2
 # === common.rabbitmq ===
 pika==1.3.2
 
-# === common.rabbitmq & common.adspower & common.gost ===
+# === common.rabbitmq & common.adspower & common.gost & common.bark ===
 requests==2.31.0
 # requests==2.26.0
 ```
 
 ### 同步
 
-| 模块                | 同步完成 |  同步时间      |
-|-------------------|------|------------|
-| common.config     | ☑️   | 2024/03/24 |
-| common.logger     | ☑️   | 2024/03/24 |
-| common.redis      | ☑️   | 2024/03/24 |
-| common.Base       | ☑️   | 2024/03/24 |
-| common.chrome     | ❌    | 2024/03/24 |
-| common.rabbitmq   | ☑️   | 2024/03/24 |
-| common.adspower   | ❌    | 2024/03/24 |
-| common.gost       | ❌    | 2024/03/24 |
-| common.proxy      | ☑️   | 2024/03/24 |
-| common.currency   | ☑️   | 2024/03/24 |
-| common.anonymous  | ☑️   | 2024/03/24 |
+| 模块                 | 同步完成 | 同步时间       |
+|--------------------|--|------------|
+| common.config      | ✅ | 2024/03/24 |
+| common.logger      | ✅ | 2024/03/24 |
+| common.redis       | ✅ | 2024/03/24 |
+| common.Base        | ✅ | 2024/03/24 |
+| common.chrome      | ✅ | 2024/03/25 |
+| common.rabbitmq    | ✅ | 2024/03/24 |
+| common.adspower    | ✅ | 2024/03/25 |
+| common.gost        | ✅ | 2024/03/25 |
+| common.proxy       | ✅ | 2024/03/24 |
+| common.currency    | ✅ | 2024/03/24 |
+| common.anonymous   | ✅ | 2024/03/24 |
+| common.bark        | ✅ | 2024/03/25 |
 
