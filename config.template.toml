@@ -34,6 +34,10 @@ password = "$my_rabbitmq_password"
   host = "https://rq.example.com"
   username = "$my_rabbitmq_username"
   password = "$my_rabbitmq_password"
+  [rabbitmq.ssl]
+  ca_certificate = "common/resources/ssl/rabbitmq/ca.crt"
+  client_certificate = "common/resources/ssl/rabbitmq/client.crt"
+  client_key = "common/resources/ssl/rabbitmq/client.key"
 
 [proxy]
 # 混淆密钥

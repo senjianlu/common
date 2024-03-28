@@ -9,6 +9,7 @@
 # @DESCRIPTION: RabbitMQ 连接模块
 
 
+import ssl
 import pika
 import requests
 
@@ -19,7 +20,8 @@ from common.logger import LOGGER
 def init_connection(host: str = CONFIG["rabbitmq"]["host"],
                     port: int = CONFIG["rabbitmq"]["port"],
                     username: str = CONFIG["rabbitmq"]["username"],
-                    password: str = CONFIG["rabbitmq"]["password"]):
+                    password: str = CONFIG["rabbitmq"]["password"],
+                    is_ssl_enabled: bool = False):
     """
     @description: 初始化 RabbitMQ 连接
     @param {type} 
@@ -29,7 +31,15 @@ def init_connection(host: str = CONFIG["rabbitmq"]["host"],
     if host is None or port is None or username is None or password is None:
         LOGGER.error("RabbitMQ 连接参数不完整！")
         return None
-    # 2. 连接 RabbitMQ
+    # 2. 判断是否需要开启 SSL
+    ssl_options = None
+    if is_ssl_enabled:
+        # 暂时不验证证书
+        # context = ssl.create_default_context(cafile=CONFIG["rabbitmq"]["ssl"]["ca_certificate"])
+        context = ssl._create_unverified_context()
+        context.load_cert_chain(CONFIG["rabbitmq"]["ssl"]["client_certificate"], CONFIG["rabbitmq"]["ssl"]["client_key"])
+        ssl_options = pika.SSLOptions(context, host)
+    # 3. 连接 RabbitMQ
     try:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
@@ -38,7 +48,8 @@ def init_connection(host: str = CONFIG["rabbitmq"]["host"],
                 credentials=pika.PlainCredentials(
                     username=username,
                     password=password
-                )
+                ),
+                ssl_options=ssl_options
             )
         )
     except Exception as e:
