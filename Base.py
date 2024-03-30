@@ -51,20 +51,21 @@ def set_updated_by(mapper, connection, instance):
     instance.updated_at = datetime.now()
 
 
-def init_db():
+def init_db(host: str = CONFIG["postgresql"]["host"],
+            port: int = CONFIG["postgresql"]["port"],
+            username: str = CONFIG["postgresql"]["username"],
+            password: str = CONFIG["postgresql"]["password"],
+            database: str = CONFIG["postgresql"]["database"]):
     """
     @description: 初始化数据库
     @param {type}
     engine: 数据库引擎
     @return:
     """
-    # 1. 读取配置文件
-    postgresql_config = CONFIG["postgresql"]
-    host = postgresql_config["host"]
-    port = postgresql_config["port"]
-    username = postgresql_config["username"]
-    password = postgresql_config["password"]
-    database = postgresql_config["database"]
+    # 1. 判断参数
+    if not host or not port or not username or not password or not database:
+        LOGGER.error("类 Base -> 数据库参数错误")
+        return None
     # 2. 建立数据库连接
     engine = create_engine(
         f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}",
