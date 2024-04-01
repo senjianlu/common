@@ -2,6 +2,11 @@
 Python3 开发自用的共通包。  
 配置文件样式参照 `config.template.toml`
 
+### 使用
+```bash
+git submodule add https://github.com/senjianlu/common.git app/common
+```
+
 ### 依赖说明
 ```bash
 # === common.config ===
