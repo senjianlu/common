@@ -51,37 +51,46 @@ def set_updated_by(mapper, connection, instance):
     instance.updated_at = datetime.now()
 
 
-def init_db(host: str = CONFIG["postgresql"]["host"],
-            port: int = CONFIG["postgresql"]["port"],
-            username: str = CONFIG["postgresql"]["username"],
-            password: str = CONFIG["postgresql"]["password"],
-            database: str = CONFIG["postgresql"]["database"]):
+def init_db(host: str = None,
+            port: int = None,
+            username: str = None,
+            password: str = None,
+            database: str = None):
     """
     @description: 初始化数据库
     @param {type}
     engine: 数据库引擎
     @return:
     """
-    # 1. 判断参数
+    # 1. 设置默认值
+    if "postgresql" not in CONFIG:
+        LOGGER.error("类 Base -> 没有找到 PostgreSQL 配置")
+        return None
+    host = host if host else CONFIG["postgresql"]["host"]
+    port = port if port else CONFIG["postgresql"]["port"]
+    username = username if username else CONFIG["postgresql"]["username"]
+    password = password if password else CONFIG["postgresql"]["password"]
+    database = database if database else CONFIG["postgresql"]["database"]
+    # 2. 判断参数
     if not host or not port or not username or not password or not database:
         LOGGER.error("类 Base -> 数据库参数错误")
         return None
-    # 2. 建立数据库连接
+    # 3. 建立数据库连接
     engine = create_engine(
         f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}",
     )
-    # 3. 创建表（表结构变更时需要手动执行）
+    # 4. 创建表（表结构变更时需要手动执行）
     Base.metadata.create_all(engine)
-    # 4. 创建 DBSession
+    # 5. 创建 DBSession
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
-    # 5. 查看数据库版本
+    # 6. 查看数据库版本
     LOGGER.info("类 Base -> 数据库 {} 连接建立：{}".format(host, session.execute(text("SELECT version()")).fetchone()[0]))
-    # 6. 监听插入和更新事件，设置创建者和更新者信息
+    # 7. 监听插入和更新事件，设置创建者和更新者信息
     for mapper in Base.registry.mappers:
         event.listen(mapper, 'before_insert', set_created_by)
         event.listen(mapper, 'before_update', set_updated_by)
-    # 7. 返回 session
+    # 8. 返回 session
     return session
 
 def ensure_db_session(func):
