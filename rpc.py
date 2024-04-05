@@ -26,10 +26,14 @@ def convert_decimal_to_marked_str(obj):
     elif isinstance(obj, list):
         for index, value in enumerate(obj):
             obj[index] = convert_decimal_to_marked_str(value)
-    # 3. 如果是 Decimal
+    # 3. 如果是自定义对象
+    elif hasattr(obj, "__dict__"):
+        for key, value in obj.__dict__.items():
+            obj.__dict__[key] = convert_decimal_to_marked_str(value)
+    # 4. 如果是 Decimal
     elif isinstance(obj, Decimal):
         obj = "<r_c><D>{}</D></r_c>".format(obj)
-    # 4. 返回结果
+    # 5. 返回结果
     return obj
 
 def convert_marked_str_to_decimal(obj):
@@ -46,8 +50,12 @@ def convert_marked_str_to_decimal(obj):
     elif isinstance(obj, list):
         for index, value in enumerate(obj):
             obj[index] = convert_marked_str_to_decimal(value)
-    # 3. 如果是字符串
+    # 3. 如果是自定义对象
+    elif hasattr(obj, "__dict__"):
+        for key, value in obj.__dict__.items():
+            obj.__dict__[key] = convert_marked_str_to_decimal(value)
+    # 4. 如果是被标记的字符串
     elif isinstance(obj, str) and obj.startswith("<r_c><D>") and obj.endswith("</D></r_c>"):
         obj = Decimal(obj.replace("<r_c><D>", "").replace("</D></r_c>", ""))
-    # 4. 返回结果
+    # 5. 返回结果
     return obj
