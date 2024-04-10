@@ -19,10 +19,12 @@ from common.Base import init_db
 
 
 # 全局变量
-# 国家代码到代理字符串列表的映射
+# 国家代码到代理字符串列表的映射 {"CN": [$proxy_str_01, $proxy_str_02, ...], ...}
 COUNTRY_CODE_2_PROXY_STR_LIST = {}
-# 端口到代理字符串的映射
-PORT_2_PROXY_STR = {}
+# 端口到代理字符串的映射 {30001: $proxy_str_01, 30002: $proxy_str_02, ...}
+PORT_2_PROXY_STR_DCIT = {}
+# 被封禁的出口 IP 列表 [$exit_ip_01, $exit_ip_02, ...]
+BANNED_EXIT_IP_LIST = []
 # 混淆密钥
 OBFS_KEY = CONFIG["proxy"]["obfs_key"]
 # 转发 Host
@@ -117,7 +119,7 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True):
         result = session.execute(text(sql)).fetchall()
         # 2.2 遍历结果并插入到全局变量中
         global COUNTRY_CODE_2_PROXY_STR_LIST
-        global PORT_2_PROXY_STR
+        global PORT_2_PROXY_STR_DCIT
         exit_ip_list = []
         for row in result:
             country_code = row[0] if row[0] else "UNKNOWN"
@@ -133,7 +135,7 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True):
             if country_code not in COUNTRY_CODE_2_PROXY_STR_LIST:
                 COUNTRY_CODE_2_PROXY_STR_LIST[country_code] = []
             COUNTRY_CODE_2_PROXY_STR_LIST[country_code].append("%s://%s:%s" % (protocol, host, port))
-            PORT_2_PROXY_STR[port] = "%s://%s:%s" % (protocol, host, port)
+            PORT_2_PROXY_STR_DCIT[port] = "%s://%s:%s" % (protocol, host, port)
         # 2.3 打印日志（各个国家的代理数量）
         for country_code, proxy_str_list in COUNTRY_CODE_2_PROXY_STR_LIST.items():
             LOGGER.info("共通 Proxy -> 国家代码：%s，代理数量：%s" % (country_code, len(proxy_str_list)))
@@ -204,9 +206,9 @@ def remove_by_proxy_str(proxy_str: str):
     # 2. 获取代理的端口，暂时可以作为唯一标识
     port = int(proxy_str.split(":")[-1])
     # 3. 获取代理字符串
-    global PORT_2_PROXY_STR
-    if port in PORT_2_PROXY_STR:
-        proxy_str = PORT_2_PROXY_STR[port]
+    global PORT_2_PROXY_STR_DCIT
+    if port in PORT_2_PROXY_STR_DCIT:
+        proxy_str = PORT_2_PROXY_STR_DCIT[port]
     else:
         LOGGER.warning("共通 Proxy -> 未找到代理字符串，无法移除代理")
         return
