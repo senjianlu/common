@@ -108,7 +108,7 @@ def connect_remote_chrome(selenium_remote_url: str, proxy_str: str = None):
     # 6. 返回 driver
     return driver
 
-def connect_debug_chrome(debug_host: str = "localhost", debug_port: int = 9222, chrome_version: int = 122):
+def connect_debug_chrome(debug_host: str = "localhost", debug_port: int = 9222, chrome_version: int = 122, system_platform: str = platform.system()):
     """
     @description: 连接调试 Chrome 浏览器
     @param {type}
@@ -121,9 +121,9 @@ def connect_debug_chrome(debug_host: str = "localhost", debug_port: int = 9222, 
     # 1.2 选择 chromedriver 版本
     chrome_service = None
     LOGGER.info("共通 Chrome -> 操作系统：{}".format(platform.system()))
-    if platform.system() == "Linux":
+    if system_platform == "Linux":
         chrome_service = Service("common/resources/chromedriver/{}/linux".format(chrome_version))
-    elif platform.system() == "Darwin":
+    elif system_platform == "Darwin":
         chrome_service = Service("common/resources/chromedriver/{}/macos".format(chrome_version))
     else:
         LOGGER.error("共通 Chrome -> 不支持的操作系统：{}".format(platform.system()))
