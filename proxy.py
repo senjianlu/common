@@ -26,10 +26,16 @@ PORT_2_PROXY_INFO_DICT = {}
 # 国家代码到代理字符串列表的映射
 #   格式：{"CN": [30001, 30002, ...], "US": [30003, 30004, ...], ...}
 COUNTRY_CODE_2_PORTS_DICT = {}
+# 被禁用的出口 IP 列表
+BANNED_EXIT_IP_LIST = []
 # 混淆密钥
 OBFS_KEY = CONFIG["proxy"]["obfs_key"]
 # 转发 Host
 FORWARDER_HOST = CONFIG["proxy"]["forwarder_host"]
+# 上次初始化时使用的参数
+LAST_IS_EXIT_IP_REMOVE_DUPLICATE = True
+LAST_COUNTRY_CODE_LIST = []
+LAST_REMARK_LIKE_STR_LIST = []
 
 
 def _generate_proxy_username_and_password_by_port(port: int):
@@ -110,6 +116,55 @@ def _parse_proxy_str(proxy_str: str):
     # 3. 返回结果
     return host, port, protocol, username, password
 
+def _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session):
+    """
+    @description: 查询代理信息并保存到全局变量中
+    """
+    try:
+        # 2.3 查询代理
+        result = session.execute(text(sql)).fetchall()
+        # 2.4 遍历结果并保存到临时结果中
+        temp_country_code_2_ports_dict = {}
+        temp_port_2_proxy_info_dict = {}
+        exit_ip_list = []
+        for row in result:
+            country_code = row[0] if row[0] else "UNKNOWN"
+            host = row[1]
+            port = row[2]
+            protocol = row[3]
+            exit_ip = row[4]
+            remark = row[5]
+            # 2.5 如果需要去重，检查是否已经存在
+            if is_exit_ip_remove_duplicate and exit_ip in exit_ip_list:
+                continue
+            else:
+                exit_ip_list.append(exit_ip)
+            # 2.6 插入到全局变量中
+            if country_code not in temp_country_code_2_ports_dict:
+                temp_country_code_2_ports_dict[country_code] = []
+            temp_country_code_2_ports_dict[country_code].append(port)
+            temp_port_2_proxy_info_dict[port] = {
+                "country_code": country_code,
+                "host": host,
+                "port": port,
+                "protocol": protocol,
+                "exit_ip": exit_ip,
+                "remark": remark
+            }
+        # 2.7 排序并显示代理数量
+        LOGGER.info("共通 Proxy -> 初始化代理池成功，代理数量：%s" % len(temp_port_2_proxy_info_dict))
+        # 2.8 保存到全局变量中
+        global COUNTRY_CODE_2_PORTS_DICT
+        global PORT_2_PROXY_INFO_DICT
+        COUNTRY_CODE_2_PORTS_DICT = temp_country_code_2_ports_dict
+        PORT_2_PROXY_INFO_DICT = temp_port_2_proxy_info_dict
+    except Exception as e:
+        LOGGER.error("共通 Proxy -> 查询代理失败，错误信息：%s" % str(e))
+        return
+    finally:
+        # 2.9 关闭数据库连接
+        session.close()
+
 def init_proxy_pool(is_exit_ip_remove_duplicate = True,
                     country_code_list: list = [],
                     remark_like_str_list: list = []):
@@ -141,45 +196,47 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True,
         sql += " AND pi.country_code IN ('" + "', '".join(country_code_list) + "')"
     if remark_like_str_list:
         sql += " AND pp.remark LIKE '%" + "%' OR pp.remark LIKE '%".join(remark_like_str_list) + "%'"
-    try:
-        # 2.3 查询代理
-        result = session.execute(text(sql)).fetchall()
-        # 2.4 遍历结果并插入到全局变量中
-        global COUNTRY_CODE_2_PORTS_DICT
-        global PORT_2_PROXY_INFO_DICT
-        exit_ip_list = []
-        for row in result:
-            country_code = row[0] if row[0] else "UNKNOWN"
-            host = row[1]
-            port = row[2]
-            protocol = row[3]
-            exit_ip = row[4]
-            remark = row[5]
-            # 2.5 如果需要去重，检查是否已经存在
-            if is_exit_ip_remove_duplicate and exit_ip in exit_ip_list:
-                continue
-            else:
-                exit_ip_list.append(exit_ip)
-            # 2.6 插入到全局变量中
-            if country_code not in COUNTRY_CODE_2_PORTS_DICT:
-                COUNTRY_CODE_2_PORTS_DICT[country_code] = []
-            COUNTRY_CODE_2_PORTS_DICT[country_code].append(port)
-            PORT_2_PROXY_INFO_DICT[port] = {
-                "country_code": country_code,
-                "host": host,
-                "port": port,
-                "protocol": protocol,
-                "exit_ip": exit_ip,
-                "remark": remark
-            }
-        # 2.7 排序并显示代理数量
-        LOGGER.info("共通 Proxy -> 初始化代理池成功，代理数量：%s" % len(PORT_2_PROXY_INFO_DICT))
-    except Exception as e:
-        LOGGER.error("共通 Proxy -> 查询代理失败，错误信息：%s" % str(e))
-        return
-    # 3. 关闭数据库连接
-    finally:
-        session.close()
+    # 3. 查询代理
+    _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session)
+    # 4. 保存初始化参数
+    global LAST_IS_EXIT_IP_REMOVE_DUPLICATE
+    global LAST_COUNTRY_CODE_LIST
+    global LAST_REMARK_LIKE_STR_LIST
+    LAST_IS_EXIT_IP_REMOVE_DUPLICATE = is_exit_ip_remove_duplicate
+    LAST_COUNTRY_CODE_LIST = country_code_list
+    LAST_REMARK_LIKE_STR_LIST = remark_like_str_list
+
+def refresh_proxy_pool(is_exit_ip_remove_banned = True):
+    """
+    @description: 刷新代理池
+    """
+    # 1. 连接数据库
+    session = init_db()
+    # 2. 查询所有代理
+    # 2.1 基础查询语句
+    sql = """
+        SELECT
+            pi.country_code,
+            pp.host,
+            pp.port,
+            pp.protocol,
+            pp.exit_ip,
+            pp.remark
+        FROM
+            pp_proxy pp LEFT JOIN pp_ip pi ON pp.exit_ip = pi.ip
+        WHERE
+            pp.exit_ip IS NOT NULL
+        AND pp.is_available = True
+    """
+    # 2.2 拼接查询条件
+    if is_exit_ip_remove_banned:
+        sql += " AND pp.exit_ip NOT IN ('" + "', '".join(BANNED_EXIT_IP_LIST) + "')"
+    if LAST_COUNTRY_CODE_LIST:
+        sql += " AND pi.country_code IN ('" + "', '".join(LAST_COUNTRY_CODE_LIST) + "')"
+    if LAST_REMARK_LIKE_STR_LIST:
+        sql += " AND pp.remark LIKE '%" + "%' OR pp.remark LIKE '%".join(LAST_REMARK_LIKE_STR_LIST) + "%'"
+    # 3. 查询代理
+    _select_and_save_proxy_info(LAST_IS_EXIT_IP_REMOVE_DUPLICATE, sql, session)
 
 def get_proxy_str(country_code: str = None,
                   is_forward: bool = False,
@@ -241,6 +298,33 @@ def get_proxy_str(country_code: str = None,
         proxy_str = proxy_protocol + "://" + FORWARDER_HOST + ":" + proxy_str.split(":")[-1]
     # 6. 返回结果
     return proxy_str
+
+def ban_exit_ip_by_proxy_str(proxy_str: str):
+    """
+    @description: 根据代理字符串禁用出口 IP
+    """
+    # 1. 参数判断
+    if not proxy_str:
+        LOGGER.warning("共通 Proxy -> 代理字符串为空，无法禁用出口 IP")
+        return
+    # 2. 解析代理字符串
+    host, port, protocol, username, password = _parse_proxy_str(proxy_str)
+    # 3. 获取代理信息
+    proxy_info = PORT_2_PROXY_INFO_DICT.get(port, None)
+    if not proxy_info:
+        LOGGER.warning("共通 Proxy -> 未找到代理信息，无法禁用出口 IP")
+        return
+    # 4. 获取出口 IP
+    exit_ip = proxy_info.get("exit_ip", None)
+    if not exit_ip:
+        LOGGER.warning("共通 Proxy -> 未找到出口 IP，无法禁用出口 IP")
+        return
+    # 5. 添加到禁用列表
+    global BANNED_EXIT_IP_LIST
+    BANNED_EXIT_IP_LIST.append(exit_ip)
+    LOGGER.info("共通 Proxy -> 禁用出口 IP：%s" % exit_ip)
+    # 6. 返回结果
+    return
 
 def remove_by_proxy_str(proxy_str: str):
     """

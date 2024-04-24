@@ -54,4 +54,7 @@ def get_random_user_agent():
     @param {type}
     @return: 随机 User Agent
     """
+    if not USER_AGENTS:
+        LOGGER.error("共通 Anonymous User Agent -> User Agents 为空！")
+        return None
     return random.choice(USER_AGENTS)
