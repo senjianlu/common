@@ -73,3 +73,12 @@ def init_currency_rates():
     # 6. 赋值
     global CURRENCY_RATES
     CURRENCY_RATES = temp_currency_rates
+
+def refresh_currency_rates():
+    """
+    @description: 刷新货币汇率
+    @param {type}
+    @return:
+    """
+    # 实现方法与 init_currency_rates() 相同
+    init_currency_rates()
