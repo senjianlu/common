@@ -7,6 +7,7 @@
 # @TIME: 11:24:50
 #
 # @DESCRIPTION: 共通代理模块
+#   使用 port 作为每个代理的主键
 
 
 import base64
@@ -18,13 +19,13 @@ from common.logger import LOGGER
 from common.Base import init_db
 
 
-# 全局变量
-# 国家代码到代理字符串列表的映射 {"CN": [$proxy_str_01, $proxy_str_02, ...], ...}
-COUNTRY_CODE_2_PROXY_STR_LIST = {}
-# 端口到代理字符串的映射 {30001: $proxy_str_01, 30002: $proxy_str_02, ...}
-PORT_2_PROXY_STR_DCIT = {}
-# 被封禁的出口 IP 列表 [$exit_ip_01, $exit_ip_02, ...]
-BANNED_EXIT_IP_LIST = []
+# === 全局变量 ===
+# 端口到代理信息的映射
+#   格式：{30001: {"country_code": $country_code, "host": $host, "port": $port, "protocol": $protocol, "exit_ip": $exit_ip, "remark": $remark}, ...}
+PORT_2_PROXY_INFO_DICT = {}
+# 国家代码到代理字符串列表的映射
+#   格式：{"CN": [30001, 30002, ...], "US": [30003, 30004, ...], ...}
+COUNTRY_CODE_2_PORTS_DICT = {}
 # 混淆密钥
 OBFS_KEY = CONFIG["proxy"]["obfs_key"]
 # 转发 Host
@@ -61,7 +62,24 @@ def _generate_proxy_username_and_password_by_port(port: int):
     # 9. 返回结果
     return encrypted_string[:10], encrypted_string[10:]
 
-def parse_proxy_str(proxy_str: str):
+def _generate_proxy_str(host, port, protocol, username, password):
+    """
+    @description: 生成代理字符串
+    """
+    proxy_str = None
+    # 1. 参数判断
+    if not host or not port or not protocol:
+        LOGGER.error("共通 Proxy -> 生成代理字符串失败，参数不全")
+        return proxy_str
+    # 2. 生成代理字符串
+    if username and password:
+        proxy_str = "%s://%s:%s@%s:%s" % (protocol, username, password, host, port)
+    else:
+        proxy_str = "%s://%s:%s" % (protocol, host, port)
+    # 3. 返回结果
+    return proxy_str
+
+def _parse_proxy_str(proxy_str: str):
     """
     @description: 解析代理字符串
     """
@@ -92,34 +110,43 @@ def parse_proxy_str(proxy_str: str):
     # 3. 返回结果
     return host, port, protocol, username, password
 
-def init_proxy_pool(is_exit_ip_remove_duplicate = True):
+def init_proxy_pool(is_exit_ip_remove_duplicate = True,
+                    country_code_list: list = [],
+                    remark_like_str_list: list = []):
     """
     @description: 初始化代理池
-    @param {type} 
-    @return: 
+    @param {type}
+    @return:
     """
     # 1. 连接数据库
     session = init_db()
     # 2. 查询所有代理
+    # 2.1 基础查询语句
     sql = """
-    SELECT
-        pi.country_code,
-        pp.host,
-        pp.port,
-        pp.protocol,
-        pp.exit_ip
-    FROM
-        pp_proxy pp LEFT JOIN pp_ip pi ON pp.exit_ip = pi.ip
-    WHERE
-        pp.exit_ip IS NOT NULL
-    AND pp.is_available = True
+        SELECT
+            pi.country_code,
+            pp.host,
+            pp.port,
+            pp.protocol,
+            pp.exit_ip,
+            pp.remark
+        FROM
+            pp_proxy pp LEFT JOIN pp_ip pi ON pp.exit_ip = pi.ip
+        WHERE
+            pp.exit_ip IS NOT NULL
+        AND pp.is_available = True
     """
+    # 2.2 拼接查询条件
+    if country_code_list:
+        sql += " AND pi.country_code IN ('" + "', '".join(country_code_list) + "')"
+    if remark_like_str_list:
+        sql += " AND pp.remark LIKE '%" + "%' OR pp.remark LIKE '%".join(remark_like_str_list) + "%'"
     try:
-        # 2.1 查询代理
+        # 2.3 查询代理
         result = session.execute(text(sql)).fetchall()
-        # 2.2 遍历结果并插入到全局变量中
-        global COUNTRY_CODE_2_PROXY_STR_LIST
-        global PORT_2_PROXY_STR_DCIT
+        # 2.4 遍历结果并插入到全局变量中
+        global COUNTRY_CODE_2_PORTS_DICT
+        global PORT_2_PROXY_INFO_DICT
         exit_ip_list = []
         for row in result:
             country_code = row[0] if row[0] else "UNKNOWN"
@@ -127,18 +154,26 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True):
             port = row[2]
             protocol = row[3]
             exit_ip = row[4]
-            # 如果需要去重
+            remark = row[5]
+            # 2.5 如果需要去重，检查是否已经存在
             if is_exit_ip_remove_duplicate and exit_ip in exit_ip_list:
                 continue
-            exit_ip_list.append(exit_ip)
-            # 插入到全局变量中
-            if country_code not in COUNTRY_CODE_2_PROXY_STR_LIST:
-                COUNTRY_CODE_2_PROXY_STR_LIST[country_code] = []
-            COUNTRY_CODE_2_PROXY_STR_LIST[country_code].append("%s://%s:%s" % (protocol, host, port))
-            PORT_2_PROXY_STR_DCIT[port] = "%s://%s:%s" % (protocol, host, port)
-        # 2.3 打印日志（各个国家的代理数量）
-        for country_code, proxy_str_list in COUNTRY_CODE_2_PROXY_STR_LIST.items():
-            LOGGER.info("共通 Proxy -> 国家代码：%s，代理数量：%s" % (country_code, len(proxy_str_list)))
+            else:
+                exit_ip_list.append(exit_ip)
+            # 2.6 插入到全局变量中
+            if country_code not in COUNTRY_CODE_2_PORTS_DICT:
+                COUNTRY_CODE_2_PORTS_DICT[country_code] = []
+            COUNTRY_CODE_2_PORTS_DICT[country_code].append(port)
+            PORT_2_PROXY_INFO_DICT[port] = {
+                "country_code": country_code,
+                "host": host,
+                "port": port,
+                "protocol": protocol,
+                "exit_ip": exit_ip,
+                "remark": remark
+            }
+        # 2.7 排序并显示代理数量
+        LOGGER.info("共通 Proxy -> 初始化代理池成功，代理数量：%s" % len(PORT_2_PROXY_INFO_DICT))
     except Exception as e:
         LOGGER.error("共通 Proxy -> 查询代理失败，错误信息：%s" % str(e))
         return
@@ -146,50 +181,65 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True):
     finally:
         session.close()
 
-def get_proxy_str(country_code: str = None, is_forward: bool = False, protocol: str = "socks5"):
+def get_proxy_str(country_code: str = None,
+                  is_forward: bool = False,
+                  protocol: str = "socks5"):
     """
     @description: 根据国家代码获取代理字符串
     @param {type} 
     country_code: 国家代码
     @return: 代理字符串
     """
-    proxy_str = None
     # 1. 代理池未初始化
-    if not COUNTRY_CODE_2_PROXY_STR_LIST:
+    if not PORT_2_PROXY_INFO_DICT:
         LOGGER.warning("共通 Proxy -> 代理池未初始化，无法获取代理")
-        return proxy_str
+        return None
+    # 2. 获取代理（这里为获取代理的主键 port）
+    port = None
     # 2.1 指定了国家代码
     if country_code:
-        if country_code in COUNTRY_CODE_2_PROXY_STR_LIST:
-            proxy_str_list = COUNTRY_CODE_2_PROXY_STR_LIST[country_code]
-            if proxy_str_list:
-                proxy_str = random.choice(proxy_str_list)
+        if country_code in COUNTRY_CODE_2_PORTS_DICT:
+            ports = COUNTRY_CODE_2_PORTS_DICT[country_code]
+            if ports:
+                port = random.choice(ports)
             else:
                 LOGGER.warning("共通 Proxy -> 指定国家的代理池为空，无法获取代理")
-                return proxy_str
+                return None
         else:
             LOGGER.warning("共通 Proxy -> 未找到指定国家的代理池，无法获取代理")
-            return proxy_str
+            return None
     # 2.2 未指定国家代码
     else:
-        all_proxy_str_list = [proxy_str for proxy_str_list in COUNTRY_CODE_2_PROXY_STR_LIST.values() for proxy_str in proxy_str_list]
-        if all_proxy_str_list:
-            proxy_str = random.choice(all_proxy_str_list)
+        all_ports = list(PORT_2_PROXY_INFO_DICT.keys())
+        if all_ports:
+            port = random.choice(all_ports)
         else:
             LOGGER.warning("共通 Proxy -> 代理池为空，无法获取代理")
-            return proxy_str
-    # 3. 指定了协议
-    proxy_protocol = protocol if protocol else proxy_str.split("://", 1)[0]
-    # 4. 是否需要转发
-    if proxy_str:
-        if is_forward:
-            # 4.1 是的话，不需要账号密码，但是需要替换 host
-            proxy_str = proxy_protocol + "://" + FORWARDER_HOST + ":" + proxy_str.split(":")[-1]
-        else:
-            # 4.2 否的话，需要账号密码
-            proxy_username, proxy_password = _generate_proxy_username_and_password_by_port(int(proxy_str.split(":")[-1]))
-            proxy_str = "%s://%s:%s@%s" % (proxy_protocol, proxy_username, proxy_password, proxy_str.split("://", 1)[1])
-    # 5. 返回结果
+            return None
+    # 3. 根据端口查找代理信息，生成代理字符串
+    # 3.1 获取代理信息
+    if port not in PORT_2_PROXY_INFO_DICT:
+        LOGGER.warning("共通 Proxy -> 未找到代理信息，无法获取代理")
+        return None
+    proxy_info = PORT_2_PROXY_INFO_DICT[port]
+    # 3.2 生成账户和密码
+    proxy_username, proxy_password = _generate_proxy_username_and_password_by_port(port)
+    # 3.3 生成代理字符串
+    proxy_str = _generate_proxy_str(
+        proxy_info["host"],
+        proxy_info["port"],
+        proxy_info["protocol"],
+        proxy_username,
+        proxy_password
+    )
+    # 4. 指定了协议
+    if protocol:
+        proxy_protocol = protocol if protocol else proxy_str.split("://", 1)[0]
+    # 5. 是否需要转发
+    if is_forward:
+        # 5.1 是的话，不需要账号密码，但是需要替换 host
+        proxy_str = proxy_protocol + "://" + FORWARDER_HOST + ":" + proxy_str.split(":")[-1]
+    # 6. 返回结果
     return proxy_str
 
 def remove_by_proxy_str(proxy_str: str):
@@ -206,17 +256,16 @@ def remove_by_proxy_str(proxy_str: str):
     # 2. 获取代理的端口，暂时可以作为唯一标识
     port = int(proxy_str.split(":")[-1])
     # 3. 获取代理字符串
-    global PORT_2_PROXY_STR_DCIT
-    if port in PORT_2_PROXY_STR_DCIT:
-        proxy_str = PORT_2_PROXY_STR_DCIT[port]
-    else:
-        LOGGER.warning("共通 Proxy -> 未找到代理字符串，无法移除代理")
-        return
+    global PORT_2_PROXY_INFO_DICT
+    if port in PORT_2_PROXY_INFO_DICT:
+        proxy_info = PORT_2_PROXY_INFO_DICT[port]
+        # 3.1 移除代理信息
+        PORT_2_PROXY_INFO_DICT.pop(port)
+        LOGGER.info("共通 Proxy -> 从代理信息字典中移除代理：%s" % proxy_info)
     # 4. 移除代理字符串
-    for country_code, proxy_str_list in COUNTRY_CODE_2_PROXY_STR_LIST.items():
-        if proxy_str in proxy_str_list:
-            proxy_str_list.remove(proxy_str)
-            LOGGER.info("共通 Proxy -> 移除代理：%s" % proxy_str)
-            break
+    for country_code, ports in COUNTRY_CODE_2_PORTS_DICT.items():
+        if port in ports:
+            COUNTRY_CODE_2_PORTS_DICT[country_code].remove(port)
+            LOGGER.info("共通 Proxy -> 从国家代码 %s 的代理列表中移除代理：%s" % (country_code, port))
     # 5. 返回结果
     return
