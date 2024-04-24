@@ -291,11 +291,10 @@ def get_proxy_str(country_code: str = None,
     )
     # 4. 指定了协议
     if protocol:
-        proxy_protocol = protocol if protocol else proxy_str.split("://", 1)[0]
+        proxy_str = protocol + "://" + proxy_str.split("://", 1)[1]
     # 5. 是否需要转发
     if is_forward:
-        # 5.1 是的话，不需要账号密码，但是需要替换 host
-        proxy_str = proxy_protocol + "://" + FORWARDER_HOST + ":" + proxy_str.split(":")[-1]
+        proxy_str = proxy_str.split("://", 1)[0] + "://" + FORWARDER_HOST + ":" + proxy_str.split(":")[-1]
     # 6. 返回结果
     return proxy_str
 
