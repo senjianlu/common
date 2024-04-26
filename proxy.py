@@ -12,6 +12,7 @@
 
 import base64
 import random
+import cachetools
 from sqlalchemy import text
 
 from common.config import CONFIG
@@ -26,8 +27,8 @@ PORT_2_PROXY_INFO_DICT = {}
 # 国家代码到代理字符串列表的映射
 #   格式：{"CN": [30001, 30002, ...], "US": [30003, 30004, ...], ...}
 COUNTRY_CODE_2_PORTS_DICT = {}
-# 被禁用的出口 IP 列表
-BANNED_EXIT_IP_LIST = []
+# 被禁用的出口 IP，30 分钟过期
+BANNED_EXIT_IP_CACHE = cachetools.TTLCache(maxsize=1000, ttl=1800)
 # 混淆密钥
 OBFS_KEY = CONFIG["proxy"]["obfs_key"]
 # 转发 Host
@@ -230,7 +231,8 @@ def refresh_proxy_pool(is_exit_ip_remove_banned = True):
     """
     # 2.2 拼接查询条件
     if is_exit_ip_remove_banned:
-        sql += " AND pp.exit_ip NOT IN ('" + "', '".join(BANNED_EXIT_IP_LIST) + "')"
+        banned_exit_ip_list = list(BANNED_EXIT_IP_CACHE.keys())
+        sql += " AND pp.exit_ip NOT IN ('" + "', '".join(banned_exit_ip_list) + "')"
     if LAST_COUNTRY_CODE_LIST:
         sql += " AND pi.country_code IN ('" + "', '".join(LAST_COUNTRY_CODE_LIST) + "')"
     if LAST_REMARK_LIKE_STR_LIST:
@@ -319,8 +321,8 @@ def ban_exit_ip_by_proxy_str(proxy_str: str):
         LOGGER.warning("共通 Proxy -> 未找到出口 IP，无法禁用出口 IP")
         return
     # 5. 添加到禁用列表
-    global BANNED_EXIT_IP_LIST
-    BANNED_EXIT_IP_LIST.append(exit_ip)
+    global BANNED_EXIT_IP_CACHE
+    BANNED_EXIT_IP_CACHE[exit_ip] = True
     LOGGER.info("共通 Proxy -> 禁用出口 IP：%s" % exit_ip)
     # 6. 返回结果
     return

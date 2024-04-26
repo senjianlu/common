@@ -28,6 +28,9 @@ pika==1.3.2
 # === common.rabbitmq & common.adspower & common.gost & common.bark ===
 requests==2.31.0
 # requests==2.26.0
+
+# === common.proxy ===
+cachetools==5.3.2
 ```
 
 ### 同步
