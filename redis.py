@@ -2,7 +2,7 @@
 # -*- coding:UTF-8 -*-
 #
 # @AUTHOR: Rabbir
-# @FILE: ~/Projects/common/redis.py
+# @FILE: ~/Projects/common/redis_test.py
 # @DATE: 2024/02/25 周日
 # @TIME: 11:25:07
 #
@@ -28,7 +28,9 @@ def init_redis_pool(db = CONFIG["redis"]["db"]):
     """
     # 1. 初始化连接池
     global REDIS_POOL
-    REDIS_POOL = redis.ConnectionPool(
+    if not REDIS_POOL:
+        REDIS_POOL = {}
+    REDIS_POOL[db] = redis.ConnectionPool(
         host=CONFIG["redis"]["host"],
         port=CONFIG["redis"]["port"],
         db=db,
@@ -44,10 +46,10 @@ def get_connetion(db = CONFIG["redis"]["db"]):
     """
     # 1. 初始化连接池
     global REDIS_POOL
-    if not REDIS_POOL:
+    if not REDIS_POOL or db not in REDIS_POOL:
         init_redis_pool(db=db)
     # 2. 返回连接
-    return redis.StrictRedis(connection_pool=REDIS_POOL)
+    return redis.StrictRedis(connection_pool=REDIS_POOL[db])
 
 def lock(lock_id, expire = 60) -> bool:
     """
