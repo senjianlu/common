@@ -38,6 +38,17 @@ def init_redis_pool(db = CONFIG["redis"]["db"]):
     # 2. 打印日志
     LOGGER.info("共通 Redis -> Redis 连接池初始化成功")
 
+def get_connetion(db = CONFIG["redis"]["db"]):
+    """
+    @description: 获取 Redis 连接
+    """
+    # 1. 初始化连接池
+    global REDIS_POOL
+    if not REDIS_POOL:
+        init_redis_pool(db=db)
+    # 2. 返回连接
+    return redis.StrictRedis(connection_pool=REDIS_POOL)
+
 def lock(lock_id, expire = 60) -> bool:
     """
     @description: 获取锁
