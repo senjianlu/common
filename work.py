@@ -17,7 +17,7 @@ from common import redis
 from common.logic.work_worker import StatusEnum as WorkerStatusEnum
 
 
-def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, work_record_expire=600, worker_expire=600):
+def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
     """
     @description: 开始工作
     """
@@ -33,7 +33,7 @@ def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, wo
     if not work_record_id:
         LOGGER.info("共通工作 -> {} 没有工作记录 ID，开始创建！".format(worker_id))
         work_record_id = "{}_{}".format(time.strftime("%Y%m%d%H%M%S", time.localtime()), int(time.time() * 1000))
-        redis_conn.set(WORK_RECORD_ID_REDIS_KEY, work_record_id, ex=worker_expire)
+        redis_conn.set(WORK_RECORD_ID_REDIS_KEY, work_record_id, ex=WORK_RECORD_EXPIRE)
         LOGGER.info("共通工作 -> {} 创建工作记录 ID：{}！".format(worker_id, work_record_id))
     else:
         LOGGER.info("共通工作 -> {} 已经有工作记录 ID：{}！".format(worker_id, work_record_id))
@@ -41,14 +41,14 @@ def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, wo
     worker_status = redis_conn.get(WORKER_ID_REDIS_KEY)
     if not worker_status:
         LOGGER.info("共通工作 -> {} 没有工作者状态，开始创建！".format(worker_id))
-        redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.START.value, ex=worker_expire)
+        redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.START.value, ex=WORKER_EXPIRE)
         LOGGER.info("共通工作 -> {} 创建工作者状态！".format(worker_id))
         return True
     else:
         LOGGER.info("共通工作 -> {} 已经有工作者状态：{}，这种情况可能是由于上次工作异常结束或工作者 ID 重复导致的！".format(worker_id, worker_status))
         return False
 
-def active(worker_id, WORK_RECORD_ID_REDIS_KEY,  WORKER_ID_REDIS_KEY: str=None, work_record_expire=600, worker_expire=600):
+def active(worker_id, WORK_RECORD_ID_REDIS_KEY,  WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
     """
     @description: 激活工作（刷新过期时间）
     """
@@ -67,7 +67,7 @@ def active(worker_id, WORK_RECORD_ID_REDIS_KEY,  WORKER_ID_REDIS_KEY: str=None, 
     else:
         LOGGER.info("共通工作 -> {} 读取到工作记录 ID：{}！".format(worker_id, work_record_id))
     # 4. 刷新工作记录 ID 的过期时间
-    redis_conn.expire(WORK_RECORD_ID_REDIS_KEY, work_record_expire)
+    redis_conn.expire(WORK_RECORD_ID_REDIS_KEY, WORK_RECORD_EXPIRE)
     # 5. 读取工作者状态
     worker_status = redis_conn.get(WORKER_ID_REDIS_KEY)
     if not worker_status:
@@ -75,11 +75,11 @@ def active(worker_id, WORK_RECORD_ID_REDIS_KEY,  WORKER_ID_REDIS_KEY: str=None, 
     else:
         LOGGER.info("共通工作 -> {} 读取到工作者状态：{}，刷新过期时间！".format(worker_id, worker_status))
     # 6. 刷新工作者状态的过期时间
-    redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.RUNNING.value, ex=worker_expire)
+    redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.RUNNING.value, ex=WORKER_EXPIRE)
     LOGGER.info("共通工作 -> {} 刷新工作者状态的过期时间！".format(worker_id))
     return True
 
-def end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, work_record_expire=600, worker_expire=600):
+def end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
     """
     @description: 结束工作
     """
@@ -97,7 +97,7 @@ def end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, work
     else:
         LOGGER.info("共通工作 -> {} 读取到工作者状态：{}，修改为结束！".format(worker_id, worker_status))
     # 4. 结束当前工作者状态
-    redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.END.value, ex=worker_expire)
+    redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.END.value, ex=WORKER_EXPIRE)
     # 5. 读取全部工作者状态
     other_worker_id_redis_key_like = WORK_RECORD_ID_REDIS_KEY[:WORK_RECORD_ID_REDIS_KEY.rfind(":")] + ":worker:*"
     other_worker_id_redis_keys = redis_conn.keys(other_worker_id_redis_key_like)
