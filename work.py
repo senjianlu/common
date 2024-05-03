@@ -107,6 +107,7 @@ def end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK
     LOGGER.info("共通工作 -> {} 读取到全部工作者状态：{}！".format(worker_id, other_worker_statuses))
     # 6. 判断是否全部结束
     if WorkerStatusEnum.START.value in other_worker_statuses or WorkerStatusEnum.RUNNING.value in other_worker_statuses:
+        redis_conn.expire(WORK_RECORD_ID_REDIS_KEY, WORK_RECORD_EXPIRE)
         LOGGER.info("共通工作 -> {} 还有其他工作者在运行或等待，不结束！".format(worker_id))
         return False
     else:
