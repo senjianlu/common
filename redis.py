@@ -61,9 +61,9 @@ def lock(lock_id, expire = 60) -> bool:
     """
     # 1. 获取连接
     global REDIS_POOL
-    if not REDIS_POOL:
+    if not REDIS_POOL or 1 not in REDIS_POOL:
         init_redis_pool(db = 1)
-    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL)
+    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL[1])
     # 2. 使用 LUA 脚本尝试锁定并设置过期时间
     is_lock_success = False
     lua_script = """
@@ -95,9 +95,9 @@ def unlock(lock_id) -> bool:
     """
     # 1. 获取连接
     global REDIS_POOL
-    if not REDIS_POOL:
+    if not REDIS_POOL or 1 not in REDIS_POOL:
         init_redis_pool(db = 1)
-    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL)
+    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL[1])
     # 2. 删除锁
     is_unlock_success = False
     lua_script = """
@@ -126,9 +126,9 @@ def wait_until_unlock(lock_id, max_wait_seconds = 60) -> bool:
     """
     # 1. 获取连接
     global REDIS_POOL
-    if not REDIS_POOL:
+    if not REDIS_POOL or 1 not in REDIS_POOL:
         init_redis_pool(db = 1)
-    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL)
+    redis_conn = redis.StrictRedis(connection_pool=REDIS_POOL[1])
     # 2. 循环等待
     start_time = time.time()
     LOGGER.info("共通 Redis -> 等待锁 {} 释放".format(lock_id))
