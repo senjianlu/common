@@ -86,7 +86,7 @@ def _generate_proxy_str(host, port, protocol, username, password):
     # 3. 返回结果
     return proxy_str
 
-def _parse_proxy_str(proxy_str: str):
+def parse_proxy_str(proxy_str: str):
     """
     @description: 解析代理字符串
     """
@@ -309,7 +309,7 @@ def ban_exit_ip_by_proxy_str(proxy_str: str):
         LOGGER.warning("共通 Proxy -> 代理字符串为空，无法禁用出口 IP")
         return
     # 2. 解析代理字符串
-    host, port, protocol, username, password = _parse_proxy_str(proxy_str)
+    host, port, protocol, username, password = parse_proxy_str(proxy_str)
     # 3. 获取代理信息
     proxy_info = PORT_2_PROXY_INFO_DICT.get(port, None)
     if not proxy_info:
