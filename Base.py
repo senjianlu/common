@@ -16,6 +16,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
 from sqlalchemy import event
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql import Insert
 
 # 导入配置，需要每次都重新导入，因为配置可能会变更
 from common.config import CONFIG
@@ -25,6 +27,27 @@ from common.logger import LOGGER
 # 基类
 Base = declarative_base()
 
+
+@compiles(Insert, "postgresql")
+def postgresql_on_conflict_do_nothing(insert, compiler, **kw):
+    """
+    @description: PostgreSQL 插入数据时如果冲突则不做任何操作
+    @param {type}
+    insert: 插入语句
+    compiler: 编译器
+    **kw: 其他参数
+    """
+    statement = compiler.visit_insert(insert, **kw)
+    # IF we have a "RETURNING" clause, we must insert before it
+    returning_position = statement.find("RETURNING")
+    if returning_position >= 0:
+        return (
+                statement[:returning_position]
+                + "ON CONFLICT DO NOTHING "
+                + statement[returning_position:]
+        )
+    else:
+        return statement + " ON CONFLICT DO NOTHING"
 
 def set_created_by(mapper, connection, instance):
     """
