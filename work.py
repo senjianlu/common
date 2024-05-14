@@ -160,3 +160,21 @@ def clear_all_workers(worker_id, WORK_RECORD_ID_REDIS_KEY):
         redis_conn.delete(other_worker_id_redis_key)
         LOGGER.info("共通工作 -> {} 删除工作者状态：{}！".format(worker_id, other_worker_id_redis_key))
     return True
+
+def clean_up(redis_key_like: str):
+    """
+    @description: 清理 Redis 中的数据
+    """
+    LOGGER.info("共通工作 -> 开始尝试清理 Redis 中键类似 {} 的数据！".format(redis_key_like))
+    # 1. 参数检查
+    if not redis_key_like:
+        LOGGER.error("共通工作 -> 键类似不能为空！")
+        return False
+    # 2. 建立 Redis 连接
+    redis_conn = redis.get_connetion(db=3)
+    # 3. 读取全部键
+    redis_keys = redis_conn.keys(redis_key_like)
+    for redis_key in redis_keys:
+        redis_conn.delete(redis_key)
+        LOGGER.info("共通工作 -> 删除键：{}！".format(redis_key))
+    return True
