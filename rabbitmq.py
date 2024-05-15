@@ -17,7 +17,21 @@ from common.config import CONFIG
 from common.logger import COMMON_LOGGER as LOGGER
 
 
-def init_connection(host: str = CONFIG["rabbitmq"]["host"],
+# 内网 host
+INTRANET_HOST = None
+
+
+def update_intranet_host(host: str):
+    """
+    @description: 更新内网 host
+    @param {type}
+    host: 内网 host
+    @return:
+    """
+    global INTRANET_HOST
+    INTRANET_HOST = host
+
+def init_connection(host: str = INTRANET_HOST or CONFIG["rabbitmq"]["host"],
                     port: int = CONFIG["rabbitmq"]["port"],
                     username: str = CONFIG["rabbitmq"]["username"],
                     password: str = CONFIG["rabbitmq"]["password"],

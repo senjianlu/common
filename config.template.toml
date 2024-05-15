@@ -7,6 +7,7 @@ host = "127.0.0.1"
 port = 6379
 password = "$my_redis_password"
 db = 0
+intranet_hosts = ["192.168.0.1"]
 
 [postgresql]
 host = "127.0.0.1"
@@ -14,6 +15,7 @@ port = 5432
 username = "$my_postgresql_username"
 password = "$my_postgresql_password"
 database = "$my_postgresql_db"
+intranet_hosts = ["192.168.0.1"]
 
 [user]
 # ID
@@ -30,6 +32,7 @@ host = "127.0.0.1"
 port = 5672
 username = "$my_rabbitmq_username"
 password = "$my_rabbitmq_password"
+intranet_hosts = ["192.168.0.1"]
   [rabbitmq.api]
   host = "https://rq.example.com"
   username = "$my_rabbitmq_username"

@@ -18,7 +18,19 @@ from common.logger import COMMON_LOGGER as LOGGER
 
 # 全局变量
 REDIS_POOL = None
+# 内网 host
+INTRANET_HOST = None
 
+
+def update_intranet_host(host: str):
+    """
+    @description: 更新内网 host
+    @param {type}
+    host: 内网 host
+    @return:
+    """
+    global INTRANET_HOST
+    INTRANET_HOST = host
 
 def init_redis_pool(db = CONFIG["redis"]["db"]):
     """
@@ -31,7 +43,7 @@ def init_redis_pool(db = CONFIG["redis"]["db"]):
     if not REDIS_POOL:
         REDIS_POOL = {}
     REDIS_POOL[db] = redis.ConnectionPool(
-        host=CONFIG["redis"]["host"],
+        host=(INTRANET_HOST or CONFIG["redis"]["host"]),
         port=CONFIG["redis"]["port"],
         db=db,
         password=CONFIG["redis"]["password"],

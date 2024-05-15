@@ -26,7 +26,19 @@ from common.logger import COMMON_LOGGER as LOGGER
 
 # 基类
 Base = declarative_base()
+# 内网 host
+INTRANET_HOST = None
 
+
+def update_intranet_host(host: str):
+    """
+    @description: 更新内网 host
+    @param {type}
+    host: 内网 host
+    @return:
+    """
+    global INTRANET_HOST
+    INTRANET_HOST = host
 
 @compiles(Insert, "postgresql")
 def postgresql_on_conflict_do_nothing(insert, compiler, **kw):
@@ -89,7 +101,7 @@ def init_db(host: str = None,
     if "postgresql" not in CONFIG:
         LOGGER.error("类 Base -> 没有找到 PostgreSQL 配置")
         return None
-    host = host if host else CONFIG["postgresql"]["host"]
+    host = host if host else (INTRANET_HOST or CONFIG["postgresql"]["host"])
     port = port if port else CONFIG["postgresql"]["port"]
     username = username if username else CONFIG["postgresql"]["username"]
     password = password if password else CONFIG["postgresql"]["password"]
