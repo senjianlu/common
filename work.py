@@ -53,8 +53,8 @@ def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WO
         LOGGER.info("共通工作 -> {} 已经有工作记录 ID：{}！".format(worker_id, work_record_id))
     # 4. 创建或读取工作者状态
     worker_status = redis_conn.get(WORKER_ID_REDIS_KEY)
-    if not worker_status:
-        LOGGER.info("共通工作 -> {} 没有工作者状态，开始创建！".format(worker_id))
+    if not worker_status or worker_status == WorkerStatusEnum.END.value:
+        LOGGER.info("共通工作 -> {} 没有工作者状态或工作者状态为结束，开始创建！".format(worker_id))
         redis_conn.set(WORKER_ID_REDIS_KEY, WorkerStatusEnum.START.value, ex=WORKER_EXPIRE)
         LOGGER.info("共通工作 -> {} 创建工作者状态！".format(worker_id))
         return True
