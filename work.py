@@ -29,6 +29,7 @@ def ensure_worker_end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: 
                 end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY, WORK_RECORD_EXPIRE, WORKER_EXPIRE)
             return result
         return wrapper
+    return decorator
 
 def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
     """
