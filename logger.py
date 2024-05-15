@@ -75,6 +75,72 @@ def get_logger():
 LOGGER = get_logger()
 
 
+class CommonLogger:
+    """
+    @description: 共通日志类
+    """
+    def __init__(self):
+        """
+        @description: 构造函数
+        @param {type}:
+        """
+        self.is_print_only = CONFIG["log"]["is_print_only"] if "is_print_only" in CONFIG["log"] else True
+        self.logger = LOGGER
+
+    def debug(self, msg: str):
+        """
+        @description: debug 日志
+        @param {type} msg: 日志信息
+        """
+        if self.is_print_only:
+            print(msg)
+        else:
+            self.logger.debug(msg)
+
+    def info(self, msg: str):
+        """
+        @description: info 日志
+        @param {type} msg: 日志信息
+        """
+        if self.is_print_only:
+            print(msg)
+        else:
+            self.logger.info(msg)
+
+    def warning(self, msg: str):
+        """
+        @description: warning 日志
+        @param {type} msg: 日志信息
+        """
+        if self.is_print_only:
+            print(msg)
+        else:
+            self.logger.warning(msg)
+
+    def error(self, msg: str):
+        """
+        @description: error 日志
+        @param {type} msg: 日志信息
+        """
+        if self.is_print_only:
+            print(msg)
+        else:
+            self.logger.error(msg)
+
+    def critical(self, msg: str):
+        """
+        @description: critical 日志
+        @param {type} msg: 日志信息
+        """
+        if self.is_print_only:
+            print(msg)
+        else:
+            self.logger.critical(msg)
+
+
+COMMON_LOGGER = CommonLogger()
+
+
 # 单体测试
 if __name__ == "__main__":
     LOGGER.debug("debug")

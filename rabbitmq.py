@@ -14,7 +14,7 @@ import pika
 import requests
 
 from common.config import CONFIG
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 
 
 def init_connection(host: str = CONFIG["rabbitmq"]["host"],

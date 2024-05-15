@@ -21,7 +21,7 @@ from sqlalchemy.sql import Insert
 
 # 导入配置，需要每次都重新导入，因为配置可能会变更
 from common.config import CONFIG
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 
 
 # 基类

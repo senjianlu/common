@@ -16,7 +16,7 @@ import cachetools
 from sqlalchemy import text
 
 from common.config import CONFIG
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 from common.Base import init_db
 
 

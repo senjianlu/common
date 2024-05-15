@@ -13,7 +13,7 @@ import time
 import redis
 
 from common.config import CONFIG
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 
 
 # 全局变量

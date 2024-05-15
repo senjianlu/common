@@ -12,7 +12,7 @@
 import requests
 
 from common.config import CONFIG
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 
 
 def send_message(server_host: str = CONFIG["bark"]["url"],

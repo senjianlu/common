@@ -12,7 +12,7 @@
 import time
 from functools import wraps
 
-from common.logger import LOGGER
+from common.logger import COMMON_LOGGER as LOGGER
 from common import redis
 from common.logic.work_worker import StatusEnum as WorkerStatusEnum
 
@@ -59,7 +59,8 @@ def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WO
         LOGGER.info("共通工作 -> {} 创建工作者状态！".format(worker_id))
         return True
     else:
-        LOGGER.info("共通工作 -> {} 已经有工作者状态：{}，这种情况可能是由于上次工作异常结束或工作者 ID 重复导致的！".format(worker_id, worker_status))
+        LOGGER.info("共通工作 -> {} 已经有工作者状态：{}，这种情况可能是由于上次工作异常结束或工作者 ID 重复导致的！".format(
+            worker_id, worker_status))
         return False
 
 def active(worker_id, WORK_RECORD_ID_REDIS_KEY,  WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
