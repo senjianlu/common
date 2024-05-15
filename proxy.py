@@ -122,9 +122,9 @@ def _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session):
     @description: 查询代理信息并保存到全局变量中
     """
     try:
-        # 2.3 查询代理
+        # 1. 查询代理
         result = session.execute(text(sql)).fetchall()
-        # 2.4 遍历结果并保存到临时结果中
+        # 2. 遍历结果并保存到临时结果中
         temp_country_code_2_ports_dict = {}
         temp_port_2_proxy_info_dict = {}
         exit_ip_list = []
@@ -135,12 +135,12 @@ def _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session):
             protocol = row[3]
             exit_ip = row[4]
             remark = row[5]
-            # 2.5 如果需要去重，检查是否已经存在
+            # 2.1 如果需要去重，检查是否已经存在
             if is_exit_ip_remove_duplicate and exit_ip in exit_ip_list:
                 continue
             else:
                 exit_ip_list.append(exit_ip)
-            # 2.6 插入到全局变量中
+            # 2.2 插入到全局变量中
             if country_code not in temp_country_code_2_ports_dict:
                 temp_country_code_2_ports_dict[country_code] = []
             temp_country_code_2_ports_dict[country_code].append(port)
@@ -152,9 +152,9 @@ def _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session):
                 "exit_ip": exit_ip,
                 "remark": remark
             }
-        # 2.7 排序并显示代理数量
+        # 3. 排序并显示代理数量
         LOGGER.info("共通 Proxy -> 初始化代理池成功，代理数量：%s" % len(temp_port_2_proxy_info_dict))
-        # 2.8 保存到全局变量中
+        # 4. 保存到全局变量中
         global COUNTRY_CODE_2_PORTS_DICT
         global PORT_2_PROXY_INFO_DICT
         COUNTRY_CODE_2_PORTS_DICT = temp_country_code_2_ports_dict
@@ -162,9 +162,6 @@ def _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session):
     except Exception as e:
         LOGGER.error("共通 Proxy -> 查询代理失败，错误信息：%s" % str(e))
         return
-    finally:
-        # 2.9 关闭数据库连接
-        session.close()
 
 def init_proxy_pool(is_exit_ip_remove_duplicate = True,
                     country_code_list: list = [],
@@ -199,7 +196,9 @@ def init_proxy_pool(is_exit_ip_remove_duplicate = True,
         sql += " AND pp.remark LIKE '%" + "%' OR pp.remark LIKE '%".join(remark_like_str_list) + "%'"
     # 3. 查询代理
     _select_and_save_proxy_info(is_exit_ip_remove_duplicate, sql, session)
-    # 4. 保存初始化参数
+    # 4. 关闭数据库连接
+    session.close()
+    # 5. 保存初始化参数
     global LAST_IS_EXIT_IP_REMOVE_DUPLICATE
     global LAST_COUNTRY_CODE_LIST
     global LAST_REMARK_LIKE_STR_LIST
@@ -239,6 +238,8 @@ def refresh_proxy_pool(is_exit_ip_remove_banned = True):
         sql += " AND pp.remark LIKE '%" + "%' OR pp.remark LIKE '%".join(LAST_REMARK_LIKE_STR_LIST) + "%'"
     # 3. 查询代理
     _select_and_save_proxy_info(LAST_IS_EXIT_IP_REMOVE_DUPLICATE, sql, session)
+    # 4. 关闭数据库连接
+    session.close()
 
 def get_proxy_str(country_code: str = None,
                   is_forward: bool = False,
