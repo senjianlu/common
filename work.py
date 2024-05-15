@@ -10,12 +10,25 @@
 
 
 import time
-from enum import Enum
+from functools import wraps
 
 from common.logger import LOGGER
 from common import redis
 from common.logic.work_worker import StatusEnum as WorkerStatusEnum
 
+
+def ensure_worker_end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+            except Exception as e:
+                LOGGER.error("共通工作 -> 装饰器监测到方法出错：{}".format(str(e)))
+            finally:
+                end(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY, WORK_RECORD_EXPIRE, WORKER_EXPIRE)
+            return result
+        return wrapper
 
 def start(worker_id, WORK_RECORD_ID_REDIS_KEY, WORKER_ID_REDIS_KEY: str=None, WORK_RECORD_EXPIRE=600, WORKER_EXPIRE=600):
     """
