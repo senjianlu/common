@@ -67,3 +67,11 @@ auth_password = "$my_gost_password"
 url = "http://127.0.0.1:8080"
 # 推送密钥
 key = "$my_bark_key"
+
+[sms]
+provider = "yezi"
+  [sms.yezi]
+  host = "http://api.sqhyw.net:90"
+  host_backup = "http://api.nnanx.net:90"
+  username = "$my_sms_yezi_username"
+  password = "$my_sms_yezi_password"
