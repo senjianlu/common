@@ -5,7 +5,7 @@
 [中文文档](https://github.com/senjianlu/common/blob/master/README_zh.md)
 
 # common
-A common package developed for Python3 web scraping.
+A common package developed for Python3 web scraping.  
 Configuration file style refers to `config.template.toml`.
 
 ### Import
