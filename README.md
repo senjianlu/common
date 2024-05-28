@@ -1,4 +1,8 @@
-![logo](https://raw.githubusercontent.com/senjianlu/common/master/Logo.png)
+<div align="center">
+    <img src=https://raw.githubusercontent.com/senjianlu/common/master/Logo.png width=40%/>
+</div>
+
+[中文文档](https://github.com/senjianlu/common/blob/master/README_zh.md)
 
 # common
 A common package developed for Python3 web scraping.

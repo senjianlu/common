@@ -1,4 +1,6 @@
-![logo](https://raw.githubusercontent.com/senjianlu/common/master/Logo.png)
+<div align="center">
+    <img src=https://raw.githubusercontent.com/senjianlu/common/master/Logo.png width=40%/>
+</div>
 
 # common
 针对 Python3 爬虫开发的共通包。  
