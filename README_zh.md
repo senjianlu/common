@@ -1,11 +1,11 @@
 ![logo](https://raw.githubusercontent.com/senjianlu/common/master/Logo.png)
 
 # common
-A common package developed for Python3 web scraping.
-Configuration file style refers to `config.template.toml`.
+针对 Python3 爬虫开发的共通包。  
+配置文件样式参照 `config.template.toml`
 
-### Import
-Recommended project structure:
+### 导入
+推荐的项目结构：
 ```text
 |- my_python_project
     |- app
@@ -16,39 +16,39 @@ Recommended project structure:
     |- README.md
     |- requirements.txt
 ```
-Add `common` as a submodule to the `app/` directory:
+将 `common` 作为子模块导入到 `app/` 目录下：
 ```bash
 git submodule add https://github.com/senjianlu/common.git app/common
 ```
 
-### Usage
-Here is an example of starting the AdsPower browser and setting up a proxy:
+### 使用
+这里以启动 AdsPower 浏览器并设置代理为例：
 ```python
 from common import chrome
 from common import proxy
 from common import adspower
 
-# 1. Get the proxy
+# 1. 获取代理
 proxy_str = proxy.get_proxy_str("HK", True)
-# 2. Initialize Chrome
-# 2.1 Check if the AdsPower browser is already running
+# 2. 初始化 Chrome
+# 2.1 查看 Ads Power 浏览器是否已启动
 if adspower.is_browser_active(serial_number=1):
-    print("AdsPower browser is running, shutting down...")
+    print("AdsPower 浏览器已启动，开始关闭...")
     adspower.stop_browser(serial_number=1)
-    print("AdsPower browser shut down successfully!")
+    print("AdsPower 浏览器关闭成功！")
 else:
-    print("AdsPower browser is not running, no need to shut down.")
-# 2.2 Start the AdsPower browser
+    print("AdsPower 浏览器未启动，无需关闭。")
+# 2.2 启动 Ads Power 浏览器
 debug_address, debug_port = chrome.start_adspower_browser(serial_number=1, proxy_str=proxy_str, is_open_tabs=True, launch_args=["--disable-popup-blocking"])
-# 2.3 Connect to the browser
+# 2.3 连接浏览器
 driver = chrome.connect_debug_chrome(debug_address, debug_port, chrome_version=122)
-# 3. Visit a website
+# 3. 访问网站
 driver.get("https://www.google.com")
-# 4. Close the browser
+# 4. 关闭浏览器
 chrome.close_browser(driver)
 ```
 
-### Dependencies
+### 依赖说明
 ```bash
 # common.config
 toml==0.10.2
@@ -67,9 +67,9 @@ requests==2.31.0
 cachetools==5.3.2
 ```
 
-### Synchronization
+### 同步
 
-| Module               | Synced | Sync Date  |
+| 模块               | 同步完成 | 同步时间       |
 |------------------|--|------------|
 | common.config    | ✅ | 2024/03/24 |
 | common.logger    | ✅ | 2024/03/24 |
@@ -86,5 +86,5 @@ cachetools==5.3.2
 | common.work      | ✅ | 2024/05/15 |
 | common.sms       | ✅ | 2024/05/27 |
 
-### Other
-Logo author: [さわらつき](https://x.com/sawaratsuki1004)
+### 其他
+Logo 作者: [さわらつき](https://x.com/sawaratsuki1004)
