@@ -165,3 +165,9 @@ def batch_insert(session, model, data):
         set_created_by(None, None, item)
     # 2. 批量插入
     session.bulk_save_objects(data)
+
+def truncate_table(session, model):
+    """
+    @description: 清空表
+    """
+    session.execute(text("TRUNCATE TABLE {}".format(model.__tablename__)))
