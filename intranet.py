@@ -51,13 +51,13 @@ def test_postgresql():
     else:
         LOGGER.error("内网测试 -> PostgreSQL 无可用内网 host")
 
-def test_rabbitmq(is_ssl_enabled: bool = False):
+def test_rabbitmq(is_ssl_enabled: bool = False, rabbitmq_config_group_key: str = "rabbitmq"):
     """
     @description: 测试 RabbitMQ 连接
     @param {type}
     """
     # 1. 读取配置
-    intranet_hosts = CONFIG["rabbitmq"]["intranet_hosts"] if "intranet_hosts" in CONFIG["rabbitmq"] else []
+    intranet_hosts = CONFIG[rabbitmq_config_group_key]["intranet_hosts"] if "intranet_hosts" in CONFIG[rabbitmq_config_group_key] else []
     if not intranet_hosts:
         LOGGER.error("内网测试 -> RabbitMQ 内网配置为空")
         return
@@ -69,20 +69,20 @@ def test_rabbitmq(is_ssl_enabled: bool = False):
         ssl_options = None
         if is_ssl_enabled:
             # 暂时不验证证书
-            # context = ssl.create_default_context(cafile=CONFIG["rabbitmq"]["ssl"]["ca_certificate"])
+            # context = ssl.create_default_context(cafile=CONFIG[rabbitmq_config_group_key]["ssl"]["ca_certificate"])
             context = ssl._create_unverified_context()
-            context.load_cert_chain(CONFIG["rabbitmq"]["ssl"]["client_certificate"],
-                                    CONFIG["rabbitmq"]["ssl"]["client_key"])
+            context.load_cert_chain(CONFIG[rabbitmq_config_group_key]["ssl"]["client_certificate"],
+                                    CONFIG[rabbitmq_config_group_key]["ssl"]["client_key"])
             ssl_options = pika.SSLOptions(context, host)
         # 2.2 连接 RabbitMQ
         try:
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                     host=host,
-                    port=CONFIG["rabbitmq"]["port"],
+                    port=CONFIG[rabbitmq_config_group_key]["port"],
                     credentials=pika.PlainCredentials(
-                        username=CONFIG["rabbitmq"]["username"],
-                        password=CONFIG["rabbitmq"]["password"]
+                        username=CONFIG[rabbitmq_config_group_key]["username"],
+                        password=CONFIG[rabbitmq_config_group_key]["password"]
                     ),
                     ssl_options=ssl_options
                 )
