@@ -21,8 +21,6 @@ from common.logger import COMMON_LOGGER as LOGGER
 # INTRANET_HOST = None
 # RabbitMQ 配置组 key 和内网 host 字典
 RABBITMQ_CONFIG_GROUP_KEY_2_INTRANET_HOST_DICT = {}
-# 全局的 RabbitMQ 配置组
-RABBITMQ_CONFIG_GROUP_KEY = "rabbitmq"
 
 
 def update_intranet_host(rabbitmq_config_group_key: str, host: str):
