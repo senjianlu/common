@@ -84,7 +84,8 @@ def init_connection(rabbitmq_config_group_key: str = "rabbitmq",
         return None
     return connection
 
-def get_queue_list(api_host: str = None,
+def get_queue_list(rabbitmq_config_group_key: str = "rabbitmq",
+                   api_host: str = None,
                    api_username: str = None,
                    api_password: str = None):
     """
@@ -93,9 +94,9 @@ def get_queue_list(api_host: str = None,
     @return:
     """
     # 1. 默认值
-    api_host = api_host if api_host else CONFIG["rabbitmq"]["api"]["host"]
-    api_username = api_username if api_username else CONFIG["rabbitmq"]["api"]["username"]
-    api_password = api_password if api_password else CONFIG["rabbitmq"]["api"]["password"]
+    api_host = api_host if api_host else CONFIG[rabbitmq_config_group_key]["api"]["host"]
+    api_username = api_username if api_username else CONFIG[rabbitmq_config_group_key]["api"]["username"]
+    api_password = api_password if api_password else CONFIG[rabbitmq_config_group_key]["api"]["password"]
     # 2. 发送请求
     url = "{}/api/queues".format(api_host.strip("/"))
     headers = {

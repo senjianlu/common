@@ -78,7 +78,7 @@ cachetools==5.3.2
 | common.redis     | ✅ | 2024/03/24 |
 | common.Base      | ✅ | 2024/03/24 |
 | common.chrome    | ✅ | 2024/03/25 |
-| common.rabbitmq  | ✅ | 2024/03/24 |
+| common.rabbitmq  | ✅ | 2024/06/11 |
 | common.adspower  | ✅ | 2024/03/25 |
 | common.gost      | ✅ | 2024/03/25 |
 | common.proxy     | ✅ | 2024/03/24 |
