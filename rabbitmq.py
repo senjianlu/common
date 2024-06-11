@@ -18,10 +18,14 @@ from common.logger import COMMON_LOGGER as LOGGER
 
 
 # 内网 host
-INTRANET_HOST = None
+# INTRANET_HOST = None
+# RabbitMQ 配置组 key 和内网 host 字典
+RABBITMQ_CONFIG_GROUP_KEY_2_INTRANET_HOST_DICT = {}
+# 全局的 RabbitMQ 配置组
+RABBITMQ_CONFIG_GROUP_KEY = "rabbitmq"
 
 
-def update_intranet_host(host: str):
+def update_intranet_host(rabbitmq_config_group_key: str, host: str):
     """
     @description: 更新内网 host
     @param {type}
@@ -29,23 +33,32 @@ def update_intranet_host(host: str):
     @return:
     """
     global INTRANET_HOST
-    INTRANET_HOST = host
+    RABBITMQ_CONFIG_GROUP_KEY_2_INTRANET_HOST_DICT[rabbitmq_config_group_key] = host
 
-def init_connection(host: str = INTRANET_HOST or CONFIG["rabbitmq"]["host"],
-                    port: int = CONFIG["rabbitmq"]["port"],
-                    username: str = CONFIG["rabbitmq"]["username"],
-                    password: str = CONFIG["rabbitmq"]["password"],
+def init_connection(rabbitmq_config_group_key: str = "rabbitmq",
+                    host: str = None,
+                    port: int = None,
+                    username: str = None,
+                    password: str = None,
                     is_ssl_enabled: bool = False):
     """
     @description: 初始化 RabbitMQ 连接
     @param {type} 
     @return: 
     """
-    # 1. 判断参数是否为空
+    # 1. 默认值
+    host = host if host else CONFIG[rabbitmq_config_group_key]["host"]
+    port = port if port else CONFIG[rabbitmq_config_group_key]["port"]
+    username = username if username else CONFIG[rabbitmq_config_group_key]["username"]
+    password = password if password else CONFIG[rabbitmq_config_group_key]["password"]
+    # 2. 内网 host
+    if rabbitmq_config_group_key in RABBITMQ_CONFIG_GROUP_KEY_2_INTRANET_HOST_DICT:
+        host = RABBITMQ_CONFIG_GROUP_KEY_2_INTRANET_HOST_DICT[rabbitmq_config_group_key]
+    # 3. 判断参数是否为空
     if host is None or port is None or username is None or password is None:
         LOGGER.error("RabbitMQ 连接参数不完整！")
         return None
-    # 2. 判断是否需要开启 SSL
+    # 4. 判断是否需要开启 SSL
     ssl_options = None
     if is_ssl_enabled:
         # 暂时不验证证书
@@ -53,7 +66,7 @@ def init_connection(host: str = INTRANET_HOST or CONFIG["rabbitmq"]["host"],
         context = ssl._create_unverified_context()
         context.load_cert_chain(CONFIG["rabbitmq"]["ssl"]["client_certificate"], CONFIG["rabbitmq"]["ssl"]["client_key"])
         ssl_options = pika.SSLOptions(context, host)
-    # 3. 连接 RabbitMQ
+    # 5. 连接 RabbitMQ
     try:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
@@ -71,15 +84,19 @@ def init_connection(host: str = INTRANET_HOST or CONFIG["rabbitmq"]["host"],
         return None
     return connection
 
-def get_queue_list(api_host: str = CONFIG["rabbitmq"]["api"]["host"],
-                   api_username: str = CONFIG["rabbitmq"]["api"]["username"],
-                   api_password: str = CONFIG["rabbitmq"]["api"]["password"]):
+def get_queue_list(api_host: str = None,
+                   api_username: str = None,
+                   api_password: str = None):
     """
     @description: 获取队列列表
     @param {type}
     @return:
     """
-    # 1. 发送请求
+    # 1. 默认值
+    api_host = api_host if api_host else CONFIG["rabbitmq"]["api"]["host"]
+    api_username = api_username if api_username else CONFIG["rabbitmq"]["api"]["username"]
+    api_password = api_password if api_password else CONFIG["rabbitmq"]["api"]["password"]
+    # 2. 发送请求
     url = "{}/api/queues".format(api_host.strip("/"))
     headers = {
         "Content-Type": "application/json"
@@ -95,9 +112,9 @@ def get_queue_list(api_host: str = CONFIG["rabbitmq"]["api"]["host"],
     except Exception as e:
         LOGGER.error("RabbitMQ -> 获取队列列表失败，错误信息：{}".format(e))
         return []
-    # 2. 判断响应是否成功
+    # 3. 判断响应是否成功
     if not response_json:
         LOGGER.error("RabbitMQ -> 获取队列列表失败，响应为空")
         return []
-    # 3. 返回结果
+    # 4. 返回结果
     return response_json
