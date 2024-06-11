@@ -87,6 +87,7 @@ cachetools==5.3.2
 | common.bark      | ✅ | 2024/03/25 |
 | common.work      | ✅ | 2024/05/15 |
 | common.sms       | ✅ | 2024/05/27 |
+| common.intranet  | ✅ | 2024/06/11 |
 
 ### 其他
 Logo 作者: [さわらつき](https://x.com/sawaratsuki1004)

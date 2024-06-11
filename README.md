@@ -73,7 +73,7 @@ cachetools==5.3.2
 
 ### Synchronization
 
-| Module               | Synced | Sync Date  |
+| Module           | Synced | Sync Date  |
 |------------------|--|------------|
 | common.config    | ✅ | 2024/03/24 |
 | common.logger    | ✅ | 2024/03/24 |
@@ -89,6 +89,7 @@ cachetools==5.3.2
 | common.bark      | ✅ | 2024/03/25 |
 | common.work      | ✅ | 2024/05/15 |
 | common.sms       | ✅ | 2024/05/27 |
+| common.intranet  | ✅ | 2024/06/11 |
 
 ### Other
 Logo author: [さわらつき](https://x.com/sawaratsuki1004)

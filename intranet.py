@@ -96,7 +96,7 @@ def test_rabbitmq(is_ssl_enabled: bool = False, rabbitmq_config_group_key: str =
     # 3. 更新内网 host
     if intranet_host:
         from common.rabbitmq import update_intranet_host
-        update_intranet_host(intranet_host)
+        update_intranet_host(rabbitmq_config_group_key, intranet_host)
         LOGGER.info(f"内网测试 -> RabbitMQ 内网 host 更新成功，host: {intranet_host}")
     else:
         LOGGER.error("内网测试 -> RabbitMQ 无可用内网 host")
