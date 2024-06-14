@@ -69,6 +69,8 @@ pika==1.3.2
 requests==2.31.0
 # common.proxy
 cachetools==5.3.2
+# common.influxdb
+influxdb-client==1.43.0
 ```
 
 ### Synchronization
@@ -90,6 +92,7 @@ cachetools==5.3.2
 | common.work      | ✅ | 2024/05/15 |
 | common.sms       | ✅ | 2024/05/27 |
 | common.intranet  | ✅ | 2024/06/11 |
+| common.influxdb  | ✅ | 2024/06/14 |
 
 ### Other
 Logo author: [さわらつき](https://x.com/sawaratsuki1004)
