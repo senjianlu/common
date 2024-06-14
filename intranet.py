@@ -136,3 +136,37 @@ def test_redis():
         LOGGER.info(f"内网测试 -> Redis 内网 host 更新成功，host: {intranet_host}")
     else:
         LOGGER.error("内网测试 -> Redis 无可用内网 host")
+
+def test_influxdb():
+    """
+    @description: 测试 InfluxDB 连接
+    @param {type}
+    """
+    # 1. 读取配置
+    intranet_hosts = CONFIG["influxdb"]["intranet_hosts"] if "intranet_hosts" in CONFIG["influxdb"] else []
+    if not intranet_hosts:
+        LOGGER.error("内网测试 -> InfluxDB 内网配置为空")
+        return
+    # 2. 测试连接
+    from influxdb_client import InfluxDBClient
+    intranet_host = None
+    for host in intranet_hosts:
+        try:
+            conn = InfluxDBClient(
+                url=f"http://{host}:{CONFIG['influxdb']['port']}",
+                token=CONFIG['influxdb']['token'],
+                org=CONFIG['influxdb']['org']
+            )
+            conn.ping()
+            LOGGER.info(f"内网测试 -> InfluxDB 连接测试成功，host: {host}")
+            intranet_host = host
+            break
+        except Exception as e:
+            LOGGER.error(f"内网测试 -> InfluxDB 连接测试失败，host: {host}，错误信息: {e}")
+    # 3. 更新内网 host
+    if intranet_host:
+        from common.influxdb import update_intranet_host
+        update_intranet_host(intranet_host)
+        LOGGER.info(f"内网测试 -> InfluxDB 内网 host 更新成功，host: {intranet_host}")
+    else:
+        LOGGER.error("内网测试 -> InfluxDB 无可用内网 host")
