@@ -15,6 +15,10 @@ from common.config import CONFIG
 from common.logger import COMMON_LOGGER as LOGGER
 
 
+# 组织
+ORG = CONFIG["influxdb"]["org"] if "org" in CONFIG["influxdb"] else None
+# 存储桶
+BUCKET = CONFIG["influxdb"]["bucket"] if "bucket" in CONFIG["influxdb"] else None
 # 内网 host
 INTRANET_HOST = None
 
@@ -29,12 +33,12 @@ def update_intranet_host(host: str):
     global INTRANET_HOST
     INTRANET_HOST = host
 
-def init_connection(host: str = None,
-                    port: int = None,
-                    token: str = None,
-                    org: str = None):
+def init_client(host: str = None,
+                port: int = None,
+                token: str = None,
+                org: str = None):
     """
-    @description: 初始化 InfluxDB 连接
+    @description: 初始化 InfluxDB 客户端
     @param {type}
     @return:
     """
@@ -48,12 +52,12 @@ def init_connection(host: str = None,
         host = INTRANET_HOST
     # 3. 判断参数是否为空
     if host is None or port is None or token is None or org is None:
-        LOGGER.error("InfluxDB 连接参数不完整！")
+        LOGGER.error("InfluxDB 客户端参数不完整！")
         return None
     # 4. 初始化连接
-    connection = InfluxDBClient(url="http://{}:{}".format(host, port), token=token, org=org)
-    connection.ready()
+    client = InfluxDBClient(url="http://{}:{}".format(host, port), token=token, org=org)
+    client.ready()
     # 5. 打印日志
-    LOGGER.info("InfluxDB 连接初始化成功")
+    LOGGER.info("InfluxDB 客户端初始化成功")
     # 5. 返回
-    return connection
+    return client
