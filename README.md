@@ -93,6 +93,7 @@ influxdb-client==1.43.0
 | common.sms       | ✅ | 2024/05/27 |
 | common.intranet  | ✅ | 2024/06/11 |
 | common.influxdb  | ✅ | 2024/06/14 |
+| common.character | ✅ | 2024/07/27 |
 
 ### Other
 Logo author: [さわらつき](https://x.com/sawaratsuki1004)
