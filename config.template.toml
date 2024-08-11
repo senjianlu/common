@@ -50,6 +50,12 @@ org = "$my_influxdb_org"
 bucket = "$my_influxdb_bucket"
 intranet_hosts = ["192.168.0.1"]
 
+[mongodb]
+host = "127.0.0.1"
+port = 27017
+username = "$my_mongodb_username"
+password = "$my_mongodb_password"
+
 [proxy]
 # 混淆密钥
 obfs_key = "$my_obfs_key"
