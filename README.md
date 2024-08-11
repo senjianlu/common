@@ -71,6 +71,8 @@ requests==2.31.0
 cachetools==5.3.2
 # common.influxdb
 influxdb-client==1.43.0
+# common.mongodb
+pymongo==3.12.0
 ```
 
 ### Synchronization
@@ -94,6 +96,7 @@ influxdb-client==1.43.0
 | common.intranet  | ✅ | 2024/06/11 |
 | common.influxdb  | ✅ | 2024/06/14 |
 | common.character | ✅ | 2024/07/27 |
+| common.mongodb   | ✅ | 2024/08/11 |
 
 ### Other
 Logo author: [さわらつき](https://x.com/sawaratsuki1004)

@@ -8,3 +8,4 @@ requests==2.31.0
 # requests==2.26.0
 cachetools==5.3.2
 influxdb-client==1.43.0
+pymongo==3.12.0
