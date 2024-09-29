@@ -71,6 +71,8 @@ cachetools==5.3.2
 influxdb-client==1.43.0
 # common.mongodb
 pymongo==3.12.0
+# common.seafile
+beautifulsoup4==4.10.0
 ```
 
 ### 同步
@@ -95,6 +97,7 @@ pymongo==3.12.0
 | common.influxdb  | ✅ | 2024/06/14 |
 | common.character | ✅ | 2024/07/27 |
 | common.mongodb   | ✅ | 2024/08/11 |
+| common.seafile   | ✅ | 2024/09/29 |
 
 ### 其他
 Logo 作者: [さわらつき](https://x.com/sawaratsuki1004)

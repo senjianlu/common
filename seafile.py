@@ -9,7 +9,6 @@
 # @DESCRIPTION: Seaflie 模块
 
 
-import re
 import requests
 from bs4 import BeautifulSoup
 
