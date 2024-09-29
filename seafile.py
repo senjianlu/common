@@ -11,48 +11,84 @@
 
 import re
 import requests
+from bs4 import BeautifulSoup
 
 from common.logger import LOGGER
 
 
-def download(url, password: str = None):
+# 文件下载路径
+DOWNLOAD_PATH = "tmp/"
+
+
+def download(url, file_name, password: str = None) -> str:
     """
     @description: 下载 Seafile 文件
-    :param password: 密码
-    :return: 下载结果
+    @param url: 文件 URL
+    @param file_name: 文件名
+    @param password: 文件密码
+    @return: 文件路径
     """
-    # 1. 访问 URL 获取 sfcsrftoken、csrfmiddlewaretoken 和 token
+    # 1. 修正 url
+    if url.strip().endswith("?dl=1"):
+        url = url.strip().rstrip("?dl=1")
+    print(url)
+    # 2. 访问 URL 获取 sfcsrftoken、csrfmiddlewaretoken 和 token
     try:
-        response = requests.get(url)
+        sessoin = requests.Session()
+        response = sessoin.get(url)
         if response.status_code != 200:
             raise Exception("请求失败，状态码：" + str(response.status_code))
-        # 1.1 使用正则 "Set-Cookie: sfcsrftoken=(.*);" 提取 sfcsrftoken
-        sfcsrftoken = re.findall("Set-Cookie: sfcsrftoken=(.*);", response.text)[0]
-        # 1.2 使用正则 '<input type="hidden" name="csrfmiddlewaretoken" value="(.*)"' 提取 csrfmiddlewaretoken
-        csrfmiddlewaretoken = re.findall('<input type="hidden" name="csrfmiddlewaretoken" value="(.*)"', response.text)[0]
-        # 1.3 使用正则 '<input type="hidden" name="token" value="(.*)"'
-        token = re.findall('<input type="hidden" name="token" value="(.*)"', response.text)[0]
+        # 2.1 使用正则 "Set-Cookie: sfcsrftoken=(.*);" 提取 sfcsrftoken
+        # > 由 session 保持，不需要提取
+        # if ("Set-Cookie" in response.headers) is False:
+        #     LOGGER.error("共通 Seafile -> 文件下载失败，第一次请求失败！")
+        #     LOGGER.error("共通 Seafile -> 请求头中没有 Set-Cookie")
+        # sfcsrftoken = re.findall("sfcsrftoken=(.*?);", response.headers["Set-Cookie"])[0]
+        # 2.2 将 HTML 转为 BeautifulSoup 对象
+        soup = BeautifulSoup(response.text, "html.parser")
+        # 2.3 获取 name = "csrfmiddlewaretoken" 的 input 标签的 value
+        csrfmiddlewaretoken = soup.find("input", {"name": "csrfmiddlewaretoken"})["value"]
+        # 2.3 获取 name = "token" 的 input 标签的 value
+        token = soup.find("input", {"name": "token"})["value"]
     except Exception as e:
         LOGGER.error("共通 Seafile -> 文件下载失败，第一次请求失败！")
         LOGGER.error("共通 Seafile -> " + str(e))
         return None
-    print(sfcsrftoken, csrfmiddlewaretoken, token)
-    # 2. 发送 POST 请求以获得 sessionid
+    # 3. 发送 POST 请求以获得 sessionid
     data = "csrfmiddlewaretoken={}&token={}&password={}".format(csrfmiddlewaretoken, token, password)
-    header_cookie = "sfcsrftoken={}".format(sfcsrftoken)
-    header_content_type = "Content-Type: application/x-www-form-urlencoded"
+    # header_cookie = "sfcsrftoken={}".format(sfcsrftoken)
+    # > 由 session 保持，不需要设置
     headers = {
-        "Cookie": header_cookie,
-        "Content-Type": header_content_type
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Referer": url,
     }
     try:
-        response = requests.post(url, data=data, headers=headers)
+        response = sessoin.post(url, data=data, headers=headers)
         if response.status_code != 200:
             raise Exception("请求失败，状态码：" + str(response.status_code))
         # 使用正则 'sessionid=(.*);' 提取 sessionid
-        sessionid = re.findall("sessionid=(.*);", response.text)[0]
+        # > 由 session 保持，不需要提取
+        # if ("Set-Cookie" in response.headers) is False:
+        #     print("共通 Seafile -> 文件下载失败，第二次请求失败！")
+        #     print("共通 Seafile -> 请求头中没有 Set-Cookie")
+        # sessionid = re.findall("sessionid=(.*?);", response.headers["Set-Cookie"])[0]
     except Exception as e:
         LOGGER.error("共通 Seafile -> 文件下载失败，第二次请求失败！")
         LOGGER.error("共通 Seafile -> " + str(e))
         return None
-    print(sessionid)
+    # 4. 发送 GET 请求以下载文件
+    file_download_url = url.rstrip("/") + "/?dl=1"
+    LOGGER.info("共通 Seafile -> 文件下载地址：" + file_download_url)
+    # 下载到 ../tmp/ 目录下
+    try:
+        response = sessoin.get(file_download_url)
+        if response.status_code != 200:
+            raise Exception("请求失败，状态码：" + str(response.status_code))
+        with open(DOWNLOAD_PATH + file_name, "wb") as file:
+            file.write(response.content)
+    except Exception as e:
+        LOGGER.error("共通 Seafile -> 文件下载失败，第三次请求失败！")
+        LOGGER.error("共通 Seafile -> " + str(e))
+        return None
+    # 5. 返回文件路径
+    return DOWNLOAD_PATH + file_name
