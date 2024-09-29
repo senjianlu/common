@@ -37,3 +37,22 @@ def download(url, password: str = None):
         LOGGER.error("共通 Seafile -> " + str(e))
         return None
     print(sfcsrftoken, csrfmiddlewaretoken, token)
+    # 2. 发送 POST 请求以获得 sessionid
+    data = "csrfmiddlewaretoken={}&token={}&password={}".format(csrfmiddlewaretoken, token, password)
+    header_cookie = "sfcsrftoken={}".format(sfcsrftoken)
+    header_content_type = "Content-Type: application/x-www-form-urlencoded"
+    headers = {
+        "Cookie": header_cookie,
+        "Content-Type": header_content_type
+    }
+    try:
+        response = requests.post(url, data=data, headers=headers)
+        if response.status_code != 200:
+            raise Exception("请求失败，状态码：" + str(response.status_code))
+        # 使用正则 'sessionid=(.*);' 提取 sessionid
+        sessionid = re.findall("sessionid=(.*);", response.text)[0]
+    except Exception as e:
+        LOGGER.error("共通 Seafile -> 文件下载失败，第二次请求失败！")
+        LOGGER.error("共通 Seafile -> " + str(e))
+        return None
+    print(sessionid)
