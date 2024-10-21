@@ -89,3 +89,9 @@ provider = "yezi"
   host_backup = "http://api.nnanx.net:90"
   username = "$my_sms_yezi_username"
   password = "$my_sms_yezi_password"
+
+[s3]
+access_key = "$your_access_key"
+secret_key = "$your_secret_key"
+endpoint = "http://s3.example.com"
+bucket = "my_bucket"
