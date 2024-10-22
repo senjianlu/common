@@ -7,3 +7,6 @@
 # @TIME: 18:24:36
 #
 # @DESCRIPTION: S3 对象存储共通操作模块
+
+
+import boto3

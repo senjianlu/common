@@ -75,6 +75,8 @@ influxdb-client==1.43.0
 pymongo==3.12.0
 # common.seafile
 beautifulsoup4==4.10.0
+# common.s3
+boto3==1.35.44
 ```
 
 ### Synchronization
