@@ -2,11 +2,11 @@
 # -*- coding:UTF-8 -*-
 #
 # @AUTHOR: Rabbir
-# @FILE: common/Base.py
+# @FILE: common/database.py
 # @DATE: 2024/03/24
 # @TIME: 16:16:55
 #
-# @DESCRIPTION: ORM 模型基类
+# @DESCRIPTION: 数据库模块
 
 
 from functools import wraps
@@ -122,7 +122,7 @@ def set_updated_by(mapper, connection, instance):
     instance.updated_at = datetime.now()
 
 
-def init_db(config_key = "Base",
+def init_db(config_key = "database",
             host: str = None,
             port: int = None,
             username: str = None,
