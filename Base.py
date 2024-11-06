@@ -18,27 +18,42 @@ from sqlalchemy.sql import text
 from sqlalchemy import event
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql import Insert
+from enum import Enum
 
-# 导入配置，需要每次都重新导入，因为配置可能会变更
 from common.config import CONFIG
-from common.logger import COMMON_LOGGER as LOGGER
+from common.logger import LOGGER
 
 
 # 基类
 Base = declarative_base()
-# 内网 host
-INTRANET_HOST = None
+# 日志标识
+LOGGER_PREFIX = "共通 Base 模块 -> "
 
 
-def update_intranet_host(host: str):
+class DatabaseType(Enum):
     """
-    @description: 更新内网 host
+    @description: 数据库类型
     @param {type}
-    host: 内网 host
-    @return:
     """
-    global INTRANET_HOST
-    INTRANET_HOST = host
+    POSTGRESQL = "POSTGRESQL"
+    # 暂时只支持 PostgreSQL 数据库
+    # MYSQL = "MYSQL"
+    # SQLITE = "SQLITE"
+
+def _check_config(config_key):
+    """
+    @description: 检查配置文件
+    @param {type}
+    """
+    # 1. 判断是否有 Base 配置
+    if config_key not in CONFIG:
+        raise Exception(LOGGER_PREFIX + "没有找到 {} 配置".format(config_key))
+    # 2. 判断是否是支持的数据库类型
+    if CONFIG[config_key]["type"] not in [item.value for item in DatabaseType]:
+        raise Exception(LOGGER_PREFIX + "不支持的数据库类型：{}".format(CONFIG[config_key]["type"]))
+    # 3. 返回
+    return True
+
 
 @compiles(Insert, "postgresql")
 def postgresql_on_conflict_do_nothing(insert, compiler, **kw):
@@ -60,6 +75,27 @@ def postgresql_on_conflict_do_nothing(insert, compiler, **kw):
         )
     else:
         return statement + " ON CONFLICT DO NOTHING"
+
+def batch_insert(session, model, data):
+    """
+    @description: 批量插入数据
+    @param {type}
+    session: 数据库连接
+    model: 模型
+    data: 数据
+    @return:
+    """
+    # 1. 设置创建者信息
+    for item in data:
+        set_created_by(None, None, item)
+    # 2. 批量插入
+    session.bulk_save_objects(data)
+
+def truncate_table(session, model):
+    """
+    @description: 清空表
+    """
+    session.execute(text("TRUNCATE TABLE {}".format(model.__tablename__)))
 
 def set_created_by(mapper, connection, instance):
     """
@@ -86,7 +122,8 @@ def set_updated_by(mapper, connection, instance):
     instance.updated_at = datetime.now()
 
 
-def init_db(host: str = None,
+def init_db(config_key = "Base",
+            host: str = None,
             port: int = None,
             username: str = None,
             password: str = None,
@@ -97,20 +134,18 @@ def init_db(host: str = None,
     engine: 数据库引擎
     @return:
     """
-    # 1. 设置默认值
-    if "postgresql" not in CONFIG:
-        LOGGER.error("类 Base -> 没有找到 PostgreSQL 配置")
-        return None
-    host = host if host else (INTRANET_HOST or CONFIG["postgresql"]["host"])
-    port = port if port else CONFIG["postgresql"]["port"]
-    username = username if username else CONFIG["postgresql"]["username"]
-    password = password if password else CONFIG["postgresql"]["password"]
-    database = database if database else CONFIG["postgresql"]["database"]
-    # 2. 判断参数
+    # 1. 检查配置文件
+    _check_config(config_key)
+    # 2. 获取数据库连接信息
+    host = host if host else CONFIG[config_key]["host"]
+    port = port if port else CONFIG[config_key]["port"]
+    username = username if username else CONFIG[config_key]["username"]
+    password = password if password else CONFIG[config_key]["password"]
+    database = database if database else CONFIG[config_key]["database"]
+    # 3. 判断参数
     if not host or not port or not username or not password or not database:
-        LOGGER.error("类 Base -> 数据库参数错误")
-        return None
-    # 3. 建立数据库连接
+        raise Exception(LOGGER_PREFIX + "数据库参数不完整")
+    # 4. 建立数据库连接
     engine = create_engine(
         f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}",
     )
@@ -119,55 +154,11 @@ def init_db(host: str = None,
     # 5. 创建 DBSession
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
-    # 6. 查看数据库版本
-    LOGGER.info("类 Base -> 数据库 {} 连接建立：{}".format(host, session.execute(text("SELECT version()")).fetchone()[0]))
+    # 6. 打印数据库连接信息
+    LOGGER.info(LOGGER_PREFIX + "数据库 {} 连接建立：{}".format(host, session.execute(text("SELECT version()")).fetchone()[0]))
     # 7. 监听插入和更新事件，设置创建者和更新者信息
     for mapper in Base.registry.mappers:
         event.listen(mapper, 'before_insert', set_created_by)
         event.listen(mapper, 'before_update', set_updated_by)
     # 8. 返回 session
     return session
-
-def ensure_db_session(func):
-    """
-    @description: 确保数据库连接，需要手动指定参数 session=None 时才会触发
-    @param {type}
-    func: 函数
-    @return:
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # 检查是否已经传入了 session
-        if "session" in kwargs and isinstance(kwargs["session"], Session):
-            return func(*args, **kwargs)
-        else:
-            # 如果没有传入 session，就创建一个新的 session
-            session = init_db()
-            try:
-                kwargs['session'] = session
-                return func(*args, **kwargs)
-            finally:
-                # 确保在函数执行结束后关闭 session
-                session.close()
-    return wrapper
-
-def batch_insert(session, model, data):
-    """
-    @description: 批量插入数据
-    @param {type}
-    session: 数据库连接
-    model: 模型
-    data: 数据
-    @return:
-    """
-    # 1. 设置创建者信息
-    for item in data:
-        set_created_by(None, None, item)
-    # 2. 批量插入
-    session.bulk_save_objects(data)
-
-def truncate_table(session, model):
-    """
-    @description: 清空表
-    """
-    session.execute(text("TRUNCATE TABLE {}".format(model.__tablename__)))
