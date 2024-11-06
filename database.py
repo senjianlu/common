@@ -122,12 +122,12 @@ def set_updated_by(mapper, connection, instance):
     instance.updated_at = datetime.now()
 
 
-def init_db(config_key = "database",
-            host: str = None,
-            port: int = None,
-            username: str = None,
-            password: str = None,
-            database: str = None):
+def init(config_key = "database",
+         host: str = None,
+         port: int = None,
+         username: str = None,
+         password: str = None,
+         database: str = None):
     """
     @description: 初始化数据库
     @param {type}
